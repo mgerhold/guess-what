@@ -160,7 +160,7 @@ using namespace c2k::Utf8Literals;
         }
         auto const key = parts.front();
         if (contains_whitespace(key)) {
-            throw std::runtime_error{ "Invalid key: \"" + std::string{ key.view() } + "\"" };
+            throw std::runtime_error{ "Invalid key: \"" + std::string{ key.view() } + "\"." };
         }
         switch (parts.size()) {
             case 1: {
@@ -228,6 +228,9 @@ using namespace c2k::Utf8Literals;
         auto const trimmed = trim(identifier_view);
         if (trimmed.is_empty()) {
             continue;
+        }
+        if (contains_whitespace(trimmed)) {
+            throw std::runtime_error{ "Invalid identifier \"" + std::string{ trimmed.view() } + "\"." };
         }
         identifiers.emplace_back(trimmed);
     }

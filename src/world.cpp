@@ -14,7 +14,6 @@ World::World() {
         }
         std::cout << "Reading item file \"" << directory_entry.path().string() << "\"...\n";
         auto item = Item{ File{ directory_entry.path() }.tree() };
-        auto name = item.name();
-        m_items.emplace(std::move(name), std::move(item));
+        m_items.emplace(directory_entry.path().stem().string(), std::move(item));
     }
 }

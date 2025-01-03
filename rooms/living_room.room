@@ -1,0 +1,8 @@
+name: "Wohnzimmer"
+description: "Ein herrlich spartanisch eingerichtetes Wohnzimmer. Es gibt nur einen Tisch, einen Stuhl, ein Fenster und eine Tür. Auf dem Tisch steht ein Teller Suppe."
+on_entry: "Du betrittst das Wohnzimmer."
+on_exit: "Du verlässt das Wohnzimmer."
+contents:
+    table: soup
+exits:
+    living_room: bowl

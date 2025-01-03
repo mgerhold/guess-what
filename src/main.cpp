@@ -1,10 +1,19 @@
 #include <iostream>
 #include <string>
 #include "parser.hpp"
+#include "file_parser.hpp"
 
 int main() {
     using namespace c2k::Utf8Literals;
-    while (true) {
+
+    try {
+        auto file = File{ "rooms/living_room.room" };
+        std::cout << file << '\n';
+    } catch (std::exception const& exception) {
+        std::cerr << "Error: " << exception.what() << '\n';
+    }
+
+    /*while (true) {
         std::cout << "> ";
         auto input = std::string{};
         if (not std::getline(std::cin, input)) {
@@ -18,5 +27,5 @@ int main() {
         } else {
             std::cout << command.value() << '\n';
         }
-    }
+    }*/
 }

@@ -3,6 +3,9 @@ add_executable(main
         parser.hpp
         parser.cpp
         command.hpp
+        room.hpp
+        file_parser.hpp
+        file_parser.cpp
 )
 
 target_link_system_libraries(main

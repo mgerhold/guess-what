@@ -49,6 +49,22 @@ using namespace c2k::Utf8Literals;
     return indentation;
 }
 
+[[nodiscard]] Tree const& Entry::as_tree() const {
+    throw std::bad_cast{};
+}
+
+[[nodiscard]] String const& Entry::as_string() const {
+    throw std::bad_cast{};
+}
+
+[[nodiscard]] IdentifierList const& Entry::as_identifier_list() const {
+    throw std::bad_cast{};
+}
+
+[[nodiscard]] Reference const& Entry::as_reference() const {
+    throw std::bad_cast{};
+}
+
 [[nodiscard]] c2k::Utf8String Tree::pretty_print(usize const base_indentation, usize const indentation_step) const {
     auto result = c2k::Utf8String{};
     for (auto const& [key, value] : m_entries) {

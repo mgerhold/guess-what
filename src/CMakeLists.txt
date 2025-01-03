@@ -6,6 +6,10 @@ add_executable(main
         room.hpp
         file_parser.hpp
         file_parser.cpp
+        item.cpp
+        item.hpp
+        world.cpp
+        world.hpp
 )
 
 target_link_system_libraries(main

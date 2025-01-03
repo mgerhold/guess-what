@@ -1,0 +1,17 @@
+name: "Suppe"
+description: "Eine abgestandene Suppe, nicht besonders geschmackvoll."
+class: collectible
+actions:
+    iss:
+        this.health + 2
+        drop bowl
+        consume
+    wirf human:
+        "Du wirfst die Suppe auf {name}. {name} schreit vor Schmerzen."
+        human.health - 4
+        drop bowl
+        consume
+    wirf:
+        "Die aerodynamischen Eigenschaften der Suppe sind nicht besonders gut."
+        drop bowl
+        consume

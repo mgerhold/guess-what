@@ -1,14 +1,15 @@
 #include <iostream>
 #include <string>
-#include "parser.hpp"
 #include "file_parser.hpp"
+#include "item.hpp"
+#include "parser.hpp"
+#include "world.hpp"
 
 int main() {
     using namespace c2k::Utf8Literals;
 
     try {
-        auto file = File{ "rooms/living_room.room" };
-        std::cout << file << '\n';
+        auto const world = World{};
     } catch (std::exception const& exception) {
         std::cerr << "Error: " << exception.what() << '\n';
     }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <concepts>
 #include <filesystem>
 #include <fstream>
 #include <lib2k/types.hpp>
@@ -9,6 +10,11 @@
 #include <sstream>
 #include <stdexcept>
 #include <unordered_map>
+
+class Tree;
+class String;
+class IdentifierList;
+class Reference;
 
 class Entry {
 public:
@@ -35,12 +41,18 @@ public:
         return false;
     }
 
+    [[nodiscard]] virtual Tree const& as_tree() const;
+    [[nodiscard]] virtual String const& as_string() const;
+    [[nodiscard]] virtual IdentifierList const& as_identifier_list() const;
+    [[nodiscard]] virtual Reference const& as_reference() const;
+
     [[nodiscard]] virtual c2k::Utf8String pretty_print(usize base_indentation, usize indentation_step) const = 0;
 };
 
 class Tree final : public Entry {
 public:
     using Dict = std::unordered_map<c2k::Utf8String, std::unique_ptr<Entry>>;
+    using ValueType = Dict;
 
 private:
     Dict m_entries;
@@ -54,9 +66,32 @@ public:
     }
 
     [[nodiscard]] c2k::Utf8String pretty_print(usize base_indentation, usize indentation_step) const override;
+
+    template<std::derived_from<Entry> T>
+    [[nodiscard]] auto try_fetch(c2k::Utf8StringView key) const -> std::optional<typename T::ValueType>;
+
+    template<std::derived_from<Entry> T>
+    [[nodiscard]] auto fetch(c2k::Utf8StringView const key) const -> typename T::ValueType {
+        auto result = try_fetch<T>(key);
+        if (not result.has_value()) {
+            throw std::runtime_error{ "Required key \"" + std::string{ key.view() } + "\" not found or type mismatch." };
+        }
+        return std::move(result).value();
+    }
+
+    [[nodiscard]] Tree const& as_tree() const override {
+        return *this;
+    }
+
+    [[nodiscard]] Dict const& entries() const {
+        return m_entries;
+    }
 };
 
 class String final : public Entry {
+public:
+    using ValueType = c2k::Utf8String;
+
 private:
     c2k::Utf8String m_value;
 
@@ -69,9 +104,20 @@ public:
     }
 
     [[nodiscard]] c2k::Utf8String pretty_print(usize base_indentation, usize indentation_step) const override;
+
+    [[nodiscard]] String const& as_string() const override {
+        return *this;
+    }
+
+    [[nodiscard]] c2k::Utf8String const& value() const {
+        return m_value;
+    }
 };
 
 class IdentifierList final : public Entry {
+public:
+    using ValueType = std::vector<c2k::Utf8String>;
+
 private:
     std::vector<c2k::Utf8String> m_values;
 
@@ -84,6 +130,14 @@ public:
     }
 
     [[nodiscard]] c2k::Utf8String pretty_print(usize base_indentation, usize indentation_step) const override;
+
+    [[nodiscard]] IdentifierList const& as_identifier_list() const override {
+        return *this;
+    }
+
+    [[nodiscard]] std::vector<c2k::Utf8String> const& values() const {
+        return m_values;
+    }
 };
 
 class Reference final : public Entry {
@@ -93,6 +147,10 @@ public:
     }
 
     [[nodiscard]] c2k::Utf8String pretty_print(usize base_indentation, usize indentation_step) const override;
+
+    [[nodiscard]] Reference const& as_reference() const override {
+        return *this;
+    }
 };
 
 class File final {
@@ -106,6 +164,10 @@ public:
         : m_filepath{ canonical(filepath) },
           m_filename{ m_filepath.filename().string() },
           m_contents{ parse(read_file(m_filepath)) } {}
+
+    [[nodiscard]] Tree const& tree() const {
+        return m_contents;
+    }
 
     friend std::ostream& operator<<(std::ostream& ostream, File const& file) {
         return ostream << file.m_filename << '\n' << file.m_contents.pretty_print(0, 4).view();
@@ -129,3 +191,35 @@ private:
     [[nodiscard]] static std::unique_ptr<String> string(c2k::Utf8StringView view);
     [[nodiscard]] static std::unique_ptr<IdentifierList> identifier_list(c2k::Utf8StringView view);
 };
+
+template<std::derived_from<Entry> T>
+auto Tree::try_fetch(c2k::Utf8StringView const key) const -> std::optional<typename T::ValueType> {
+    auto const iterator = m_entries.find(key);
+    if (iterator == m_entries.cend()) {
+        // Not found.
+        return std::nullopt;
+    }
+    if constexpr (std::same_as<T, String>) {
+        if (not iterator->second->is_string()) {
+            return std::nullopt;
+        }
+        return iterator->second->as_string().value();
+    } else if constexpr (std::same_as<T, Tree>) {
+        if (not iterator->second->is_tree()) {
+            return std::nullopt;
+        }
+        return iterator->second->as_tree().entries();
+    } else if constexpr (std::same_as<T, IdentifierList>) {
+        if (not iterator->second->is_identifier_list()) {
+            return std::nullopt;
+        }
+        return iterator->second->as_identifier_list().values();
+    } else if constexpr (std::same_as<T, Reference>) {
+        if (not iterator->second->is_reference()) {
+            return std::nullopt;
+        }
+        return iterator->second->as_reference();
+    } else {
+        throw;
+    }
+}

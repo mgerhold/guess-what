@@ -1,0 +1,8 @@
+name: ""
+description: ""
+class: none
+actions:
+    iss:
+        "Das kann ich nicht essen."
+    wirf:
+        "Wie soll ich das werfen?"

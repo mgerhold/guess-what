@@ -97,6 +97,15 @@ using namespace c2k::Utf8Literals;
     return "";
 }
 
+[[nodiscard]] static bool contains_whitespace(c2k::Utf8StringView const view) {
+    for (auto const c : view) {
+        if (is_whitespace(c)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 [[nodiscard]] Tree File::parse(c2k::Utf8StringView const view) {
     if (view.is_empty() or view.back() != '\n') {
         throw std::runtime_error{ "Input must end with a linebreak." };
@@ -146,9 +155,15 @@ using namespace c2k::Utf8Literals;
             part = trim(part);
         }
         std::erase_if(parts, [](c2k::Utf8StringView const part) { return part.is_empty(); });
+        if (parts.empty()) {
+            continue;
+        }
+        auto const key = parts.front();
+        if (contains_whitespace(key)) {
+            throw std::runtime_error{ "Invalid key: \"" + std::string{ key.view() } + "\"" };
+        }
         switch (parts.size()) {
             case 1: {
-                auto const key = parts.front();
                 if (not contains_colon) {
                     // This is a reference.
                     dict[key] = std::make_unique<Reference>();
@@ -182,7 +197,6 @@ using namespace c2k::Utf8Literals;
                 break;
             }
             case 2: {
-                auto const key = parts.front();
                 auto const value = parts.back();
                 if (value.front() == '"') {
                     dict[key] = string(value);

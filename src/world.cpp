@@ -16,4 +16,8 @@ World::World() {
         auto item = Item{ File{ directory_entry.path() }.tree() };
         m_items.emplace(directory_entry.path().stem().string(), std::move(item));
     }
+
+    if (not m_items.contains("default")) {
+        std::cerr << "Warning: No default item found. Please add a file called \"default.item\".\n";
+    }
 }

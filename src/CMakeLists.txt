@@ -10,9 +10,13 @@ add_executable(main
         item.hpp
         world.cpp
         world.hpp
+        room.cpp
+        inventory.hpp
+        inventory.cpp
 )
 
 target_link_system_libraries(main
         PRIVATE
         lib2k
+        tl::optional
 )

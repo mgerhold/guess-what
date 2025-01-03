@@ -6,7 +6,6 @@ using namespace c2k::Utf8Literals;
 using c2k::Utf8String;
 using c2k::Utf8StringView;
 
-Item::Item(Tree const& tree)
-    : m_name{ tree.fetch<String>("name") },
-      m_description{ tree.fetch<String>("description") },
-      m_classes{ tree.fetch<IdentifierList>("class") } {}
+[[nodiscard]] bool ItemBlueprint::has_class(Utf8StringView const name) const {
+    return std::find(m_classes.cbegin(), m_classes.cend(), name) != m_classes.cend();
+}

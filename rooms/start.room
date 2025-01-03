@@ -3,6 +3,9 @@ description: "Ein herrlich spartanisch eingerichtetes Wohnzimmer. Es gibt nur ei
 on_entry: "Du betrittst das Wohnzimmer."
 on_exit: "Du verlässt das Wohnzimmer."
 contents:
-    table: soup
+    table:
+        contents:
+            soup
+    chair
 exits:
     living_room: bowl

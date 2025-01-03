@@ -1,6 +1,6 @@
 name: "Suppe"
 description: "Eine abgestandene Suppe, nicht besonders geschmackvoll."
-class: collectible
+classes: collectible
 actions:
     iss:
         apply: "this.health + 2"

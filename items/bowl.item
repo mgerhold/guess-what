@@ -1,3 +1,3 @@
 name: "Teller"
 description: "Ein leerer Teller."
-class: collectible
+classes: collectible

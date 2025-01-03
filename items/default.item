@@ -1,6 +1,6 @@
 name: ""
 description: ""
-class: none
+classes: none
 actions:
     iss:
         "Das kann ich nicht essen."

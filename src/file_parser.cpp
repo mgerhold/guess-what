@@ -108,7 +108,7 @@ using namespace c2k::Utf8Literals;
 
 [[nodiscard]] Tree File::parse(c2k::Utf8StringView const view) {
     if (view.is_empty() or view.back() != '\n') {
-        throw std::runtime_error{ "Input must end with a linebreak." };
+        throw std::runtime_error{ "Block must end with a linebreak." };
     }
     static constexpr auto is_comment = [](c2k::Utf8StringView const line) {
         auto const trimmed = trim(line);
@@ -181,7 +181,7 @@ using namespace c2k::Utf8Literals;
                         // End of file.
                         break;
                     }
-                    if (get_indentation(line) <= indentation) {
+                    if (not is_comment(line) and get_indentation(line) <= indentation) {
                         // This line has the same indentation as or less than the base line.
                         break;
                     }

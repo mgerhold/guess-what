@@ -85,6 +85,11 @@ using DirectoryIterator = std::filesystem::recursive_directory_iterator;
     if (not rooms.contains("start")) {
         std::cerr << "Warning: No starting room found. Please add a file called \"start.room\".\n";
     }
+
+    for (auto const& [_, room] : rooms) {
+        std::cout << room;
+    }
+
     return rooms;
 }
 

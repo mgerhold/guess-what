@@ -21,6 +21,10 @@ public:
     }
 
     [[nodiscard]] bool has_class(c2k::Utf8StringView name) const;
+
+    [[nodiscard]] c2k::Utf8String const& name() const {
+        return m_name;
+    }
 };
 
 class Item final {
@@ -31,4 +35,18 @@ private:
 public:
     explicit Item(ItemBlueprint const& blueprint, Inventory inventory)
         : m_blueprint{ &blueprint }, m_inventory{ std::move(inventory) } {}
+
+    [[nodiscard]] ItemBlueprint const& blueprint() const {
+        return *m_blueprint;
+    }
+
+    [[nodiscard]] Inventory const& inventory() const {
+        return m_inventory;
+    }
+
+    friend std::ostream& operator<<(std::ostream& ostream, Item const& item) {
+        ostream << item.blueprint().name().view() << '\n';
+        ostream << item.inventory() << '\n';
+        return ostream;
+    }
 };

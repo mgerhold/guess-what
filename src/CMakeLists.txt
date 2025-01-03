@@ -13,6 +13,7 @@ add_executable(main
         room.cpp
         inventory.hpp
         inventory.cpp
+        utils.hpp
 )
 
 target_link_system_libraries(main

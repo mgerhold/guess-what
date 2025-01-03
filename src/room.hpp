@@ -22,4 +22,10 @@ public:
           m_on_exit{ std::move(on_exit) } {}
 
     void insert(std::unique_ptr<Item> item);
+
+    friend std::ostream& operator<<(std::ostream& ostream, Room const& room) {
+        ostream << room.m_name.view() << '\n';
+        ostream << room.m_inventory << '\n';
+        return ostream;
+    }
 };

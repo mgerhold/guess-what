@@ -44,7 +44,7 @@ struct Overloaded : Ts... {
             return view.substring(it, view.cend());
         }
     }
-    return view;
+    return view.substring(view.cbegin(), view.cbegin());
 }
 
 [[nodiscard]] inline c2k::Utf8StringView right_trim(c2k::Utf8StringView const view) {
@@ -53,7 +53,7 @@ struct Overloaded : Ts... {
             return view.substring(view.cbegin(), it.base());
         }
     }
-    return view;
+    return view.substring(view.cbegin(), view.cbegin());
 }
 
 [[nodiscard]] inline c2k::Utf8StringView trim(c2k::Utf8StringView const view) {

@@ -47,14 +47,17 @@ public:
             }
 
             if (current() == '\n') {
+                std::cerr << "emitting linebreak\n";
                 m_tokens.push_back(token::Linebreak{});
                 advance();
 
                 auto next_newline = m_source.find('\n', m_iterator);
                 while (next_newline != m_source.cend()) {
                     auto const line = trim(m_source.substring(m_iterator, next_newline));
+                    std::cerr << "line: '" << line.view() << "'\n";
                     if (line.is_empty()
                         or (line.calculate_char_count() >= 2 and line.front() == '/' and *(line.cbegin() + 1) == '/')) {
+                        std::cerr << "  ignore this line\n";
                         m_iterator = next_newline;
                         advance();
                         next_newline = m_source.find('\n', m_iterator);

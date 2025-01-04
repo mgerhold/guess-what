@@ -6,13 +6,12 @@
 #include "inventory.hpp"
 
 class ItemBlueprint final {
-public:
+private:
     c2k::Utf8String m_name;
     c2k::Utf8String m_description;
     std::vector<c2k::Utf8String> m_classes;
 
-    // TODO: Actions... (maybe more?)
-
+public:
     explicit ItemBlueprint(c2k::Utf8String name, c2k::Utf8String description, std::vector<c2k::Utf8String> classes)
         : m_name{ std::move(name) }, m_description{ std::move(description) }, m_classes{ std::move(classes) } {}
 
@@ -20,10 +19,18 @@ public:
         return has_class("inventory");
     }
 
+    [[nodiscard]] bool is_collectible() const {
+        return has_class("collectible");
+    }
+
     [[nodiscard]] bool has_class(c2k::Utf8StringView name) const;
 
     [[nodiscard]] c2k::Utf8String const& name() const {
         return m_name;
+    }
+
+    [[nodiscard]] c2k::Utf8String const& description() const {
+        return m_description;
     }
 };
 
@@ -38,6 +45,10 @@ public:
 
     [[nodiscard]] ItemBlueprint const& blueprint() const {
         return *m_blueprint;
+    }
+
+    [[nodiscard]] Inventory& inventory() {
+        return m_inventory;
     }
 
     [[nodiscard]] Inventory const& inventory() const {

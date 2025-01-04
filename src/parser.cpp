@@ -56,7 +56,12 @@ std::expected<Command, ParserError> parse_command(
     auto const tokens = tokenize(input, ignore_list);
 
     auto const is_object = [&objects](c2k::Utf8String const& object) {
-        return std::find(objects.cbegin(), objects.cend(), object) != objects.cend();
+        return std::find_if(
+                   objects.cbegin(),
+                   objects.cend(),
+                   [&](auto const& current) { return current.to_lowercase() == object.to_lowercase(); }
+               )
+               != objects.cend();
     };
 
     switch (tokens.size()) {

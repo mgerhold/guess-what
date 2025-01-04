@@ -71,6 +71,10 @@ struct Command {
         }
     }
 
+    [[nodiscard]] bool has_nouns() const {
+        return not nouns.empty();
+    }
+
     friend std::ostream& operator<<(std::ostream& ostream, Command const& command) {
         ostream << "VERB[" << command.verb << "]";
         for (auto const& noun : command.nouns) {

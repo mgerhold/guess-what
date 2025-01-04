@@ -31,6 +31,34 @@ public:
 
     void insert(std::unique_ptr<Item> item);
 
+    [[nodiscard]] c2k::Utf8String const& name() const {
+        return m_name;
+    }
+
+    [[nodiscard]] c2k::Utf8String const& description() const {
+        return m_description;
+    }
+
+    [[nodiscard]] c2k::Utf8String const& on_entry() const {
+        return m_on_entry;
+    }
+
+    [[nodiscard]] c2k::Utf8String const& on_exit() const {
+        return m_on_exit;
+    }
+
+    [[nodiscard]] Inventory& inventory() {
+        return m_inventory;
+    }
+
+    [[nodiscard]] Inventory const& inventory() const {
+        return m_inventory;
+    }
+
+    [[nodiscard]] std::vector<Exit> const& exits() const {
+        return m_exits;
+    }
+
     friend std::ostream& operator<<(std::ostream& ostream, Room const& room) {
         ostream << room.m_name.view() << '\n';
         ostream << room.m_inventory << '\n';

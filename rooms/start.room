@@ -8,5 +8,7 @@ contents:
             soup
     chair
 exits:
-    start: table,soup,chair
-    test
+    store:
+        description: "Die Tür zur Abstellkammer. Hier sollte ich erst hingehen, wenn ich eine Suppe habe."
+        required_items: soup
+        on_locked: "Ohne eine Suppe gehe ich dort nicht hin."

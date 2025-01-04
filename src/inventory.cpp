@@ -1,6 +1,15 @@
 #include "inventory.hpp"
 #include "item.hpp"
 
+[[nodiscard]] bool Inventory::contains(ItemBlueprint const* const blueprint) const {
+    for (auto const& item : m_contents) {
+        if (&item->blueprint() == blueprint) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void Inventory::insert(std::unique_ptr<Item> item) {
     m_contents.push_back(std::move(item));
 }

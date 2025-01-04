@@ -8,4 +8,4 @@ contents:
             soup
     chair
 exits:
-    start: table,soup,chair,slartibart
+    start: table,soup,chair

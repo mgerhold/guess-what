@@ -17,6 +17,7 @@ add_executable(main
         exit.hpp
         lexer.hpp
         token.hpp
+        entry.hpp
 )
 
 target_link_system_libraries(main

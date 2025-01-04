@@ -3,6 +3,6 @@ description: ""
 classes: none
 actions:
     iss:
-        "Das kann ich nicht essen."
+        print: "Das kann ich nicht essen."
     wirf:
-        "Wie soll ich das werfen?"
+        print: "Wie soll ich das werfen?"

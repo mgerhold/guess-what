@@ -15,7 +15,6 @@ using DirectoryIterator = std::filesystem::recursive_directory_iterator;
         }
         std::cout << "Reading item file \"" << directory_entry.path().string() << "\"...\n";
         auto const tree = File{ directory_entry.path() }.tree();
-        std::cout << tree.pretty_print(0, 4) << "\n\n";
         auto item = ItemBlueprint{
             tree.fetch<String>("name"),
             tree.fetch<String>("description"),
@@ -119,9 +118,9 @@ using DirectoryIterator = std::filesystem::recursive_directory_iterator;
         std::cerr << "Warning: No starting room found. Please add a file called \"start.room\".\n";
     }
 
-    for (auto const& [_, room] : rooms) {
+    /*for (auto const& [_, room] : rooms) {
         std::cout << room;
-    }
+    }*/
 
     return rooms;
 }

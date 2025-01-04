@@ -11,172 +11,115 @@
 #include <stdexcept>
 #include <tl/optional.hpp>
 #include <unordered_map>
+#include "entry.hpp"
+#include "lexer.hpp"
+#include "token.hpp"
 #include "utils.hpp"
 
-class Tree;
-class String;
-class IdentifierList;
-class Reference;
+class FileParser final {
+private:
+    std::vector<Token> m_tokens;
+    usize m_index = 0;
 
-class Entry {
 public:
-    Entry() = default;
-    Entry(Entry const& other) = default;
-    Entry(Entry&& other) noexcept = default;
-    Entry& operator=(Entry const& other) = default;
-    Entry& operator=(Entry&& other) noexcept = default;
-    virtual ~Entry() = default;
+    explicit FileParser(std::vector<Token> tokens)
+        : m_tokens{ std::move(tokens) } {}
 
-    [[nodiscard]] virtual bool is_tree() const {
-        return false;
+    [[nodiscard]] Tree parse() {
+        return tree();
     }
-
-    [[nodiscard]] virtual bool is_string() const {
-        return false;
-    }
-
-    [[nodiscard]] virtual bool is_identifier_list() const {
-        return false;
-    }
-
-    [[nodiscard]] virtual bool is_reference() const {
-        return false;
-    }
-
-    [[nodiscard]] virtual Tree const& as_tree() const;
-    [[nodiscard]] virtual String const& as_string() const;
-    [[nodiscard]] virtual IdentifierList const& as_identifier_list() const;
-    [[nodiscard]] virtual Reference const& as_reference() const;
-    [[nodiscard]] virtual char const* type_name() const = 0;
-
-    [[nodiscard]] virtual c2k::Utf8String pretty_print(usize base_indentation, usize indentation_step) const = 0;
-};
-
-class Tree final : public Entry {
-public:
-    using Dict = std::unordered_map<c2k::Utf8String, std::unique_ptr<Entry>>;
-    using ValueType = Dict;
 
 private:
-    Dict m_entries;
-
-public:
-    explicit Tree(std::unordered_map<c2k::Utf8String, std::unique_ptr<Entry>> entries)
-        : m_entries{ std::move(entries) } {}
-
-    [[nodiscard]] bool is_tree() const override {
-        return true;
-    }
-
-    [[nodiscard]] c2k::Utf8String pretty_print(usize base_indentation, usize indentation_step) const override;
-
-    template<std::derived_from<Entry> T>
-    [[nodiscard]] auto try_fetch(c2k::Utf8StringView key) const -> tl::optional<typename T::ValueType const&>;
-
-    template<std::derived_from<Entry> T>
-    [[nodiscard]] auto fetch(c2k::Utf8StringView const key) const -> typename T::ValueType const& {
-        auto result = try_fetch<T>(key);
-        if (not result.has_value()) {
-            throw std::runtime_error{ "Required key \"" + std::string{ key.view() } + "\" not found or type mismatch." };
+    [[nodiscard]] std::vector<c2k::Utf8String> identifier_list() {
+        auto identifiers = std::vector{ expect<token::Identifier>("Expected identifier").lexeme };
+        while (match<token::Comma>()) {
+            identifiers.push_back(expect<token::Identifier>("Expected identifier").lexeme);
         }
-        return std::move(result).value();
+        // Allow trailing comma.
+        std::ignore = match<token::Comma>();
+        expect<token::Linebreak>("Expected linebreak");
+        return identifiers;
     }
 
-    [[nodiscard]] Tree const& as_tree() const override {
-        return *this;
+    [[nodiscard]] Tree tree() {
+        auto dict = Tree::Dict{};
+
+        // Ignore leading linebreaks (if the file is empty, this will ignore the
+        // complete file, which is okay).
+        while (match<token::Linebreak>()) {}
+
+        while (not is_at_end() and not current_is<token::Dedent>()) {
+            auto const& key = expect<token::Identifier>("Expected identifier");
+            if (match<token::Linebreak>()) {
+                dict.emplace_back(key.lexeme, std::make_unique<Reference>());
+                continue;
+            }
+            expect<token::Colon>("Expected ':'");
+            if (auto const string = match<token::String>()) {
+                dict.emplace_back(key.lexeme, std::make_unique<String>(string.value().lexeme));
+                expect<token::Linebreak>("Expected linebreak after string");
+                continue;
+            }
+
+            if (current_is<token::Identifier>()) {
+                dict.emplace_back(key.lexeme, std::make_unique<IdentifierList>(identifier_list()));
+                continue;
+            }
+            expect<token::Linebreak>("Expected string, identifier list, or linebreak");
+            expect<token::Indent>("Subtree must be indented");
+            dict.emplace_back(key.lexeme, std::make_unique<Tree>(tree()));
+            expect<token::Dedent>("Subtree must end with dedent");
+        }
+
+        return Tree{ std::move(dict) };
     }
 
-    [[nodiscard]] char const* type_name() const override {
-        return "Tree";
+    template<typename T>
+    T const& expect(char const* const error_message) {
+        if (auto const result = match<T>()) {
+            return result.value();
+        }
+        auto stream = std::ostringstream{};
+        stream << error_message << " (got " << current() << " instead)";
+        throw std::runtime_error{ std::move(stream).str() };
     }
 
-    [[nodiscard]] Dict const& entries() const {
-        return m_entries;
+    template<typename T>
+    [[nodiscard]] tl::optional<T const&> match() {
+        if (not current_is<T>()) {
+            return tl::nullopt;
+        }
+        auto const& result = std::get<T>(current());
+        advance();
+        return result;
     }
 
-    [[nodiscard]] auto cbegin() const {
-        return m_entries.cbegin();
+    template<typename T>
+    [[nodiscard]] bool current_is() const {
+        return is<T>(current());
     }
 
-    [[nodiscard]] auto cend() const {
-        return m_entries.cend();
-    }
-};
-
-class String final : public Entry {
-public:
-    using ValueType = c2k::Utf8String;
-
-private:
-    c2k::Utf8String m_value;
-
-public:
-    explicit String(c2k::Utf8String value)
-        : m_value{ std::move(value) } {}
-
-    [[nodiscard]] bool is_string() const override {
-        return true;
+    [[nodiscard]] bool is_at_end() const {
+        return m_index >= m_tokens.size() or is<token::EndOfInput>(m_tokens.at(m_index));
     }
 
-    [[nodiscard]] c2k::Utf8String pretty_print(usize base_indentation, usize indentation_step) const override;
-
-    [[nodiscard]] String const& as_string() const override {
-        return *this;
+    [[nodiscard]] Token const& current() const {
+        if (is_at_end()) {
+            return m_tokens.back();
+        }
+        return m_tokens.at(m_index);
     }
 
-    [[nodiscard]] char const* type_name() const override {
-        return "String";
+    void advance() {
+        if (is_at_end()) {
+            return;
+        }
+        ++m_index;
     }
 
-    [[nodiscard]] c2k::Utf8String const& value() const {
-        return m_value;
-    }
-};
-
-class IdentifierList final : public Entry {
-public:
-    using ValueType = std::vector<c2k::Utf8String>;
-
-private:
-    std::vector<c2k::Utf8String> m_values;
-
-public:
-    explicit IdentifierList(std::vector<c2k::Utf8String> values)
-        : m_values{ std::move(values) } {}
-
-    [[nodiscard]] bool is_identifier_list() const override {
-        return true;
-    }
-
-    [[nodiscard]] c2k::Utf8String pretty_print(usize base_indentation, usize indentation_step) const override;
-
-    [[nodiscard]] IdentifierList const& as_identifier_list() const override {
-        return *this;
-    }
-
-    [[nodiscard]] char const* type_name() const override {
-        return "IdentifierList";
-    }
-
-    [[nodiscard]] std::vector<c2k::Utf8String> const& values() const {
-        return m_values;
-    }
-};
-
-class Reference final : public Entry {
-public:
-    [[nodiscard]] bool is_reference() const override {
-        return true;
-    }
-
-    [[nodiscard]] c2k::Utf8String pretty_print(usize base_indentation, usize indentation_step) const override;
-
-    [[nodiscard]] Reference const& as_reference() const override {
-        return *this;
-    }
-
-    [[nodiscard]] char const* type_name() const override {
-        return "Reference";
+    template<typename T>
+    [[nodiscard]] static bool is(Token const& token) {
+        return std::holds_alternative<T>(token);
     }
 };
 
@@ -190,7 +133,7 @@ public:
     explicit File(std::filesystem::path const& filepath)
         : m_filepath{ canonical(filepath) },
           m_filename{ m_filepath.filename().string() },
-          m_contents{ parse(read_file(m_filepath)) } {}
+          m_contents{ FileParser{ Lexer{ read_file(m_filepath) }.tokenize() }.parse() } {}
 
     [[nodiscard]] Tree const& tree() const& {
         return m_contents;
@@ -203,41 +146,4 @@ public:
     friend std::ostream& operator<<(std::ostream& ostream, File const& file) {
         return ostream << file.m_filename << '\n' << file.m_contents.pretty_print(0, 4).view();
     }
-
-private:
-    [[nodiscard]] static Tree parse(c2k::Utf8StringView view);
-    [[nodiscard]] static std::unique_ptr<String> string(c2k::Utf8StringView view);
-    [[nodiscard]] static std::unique_ptr<IdentifierList> identifier_list(c2k::Utf8StringView view);
 };
-
-template<std::derived_from<Entry> T>
-auto Tree::try_fetch(c2k::Utf8StringView const key) const -> tl::optional<typename T::ValueType const&> {
-    auto const iterator = m_entries.find(key);
-    if (iterator == m_entries.cend()) {
-        // Not found.
-        return tl::nullopt;
-    }
-    if constexpr (std::same_as<T, String>) {
-        if (not iterator->second->is_string()) {
-            return tl::nullopt;
-        }
-        return iterator->second->as_string().value();
-    } else if constexpr (std::same_as<T, Tree>) {
-        if (not iterator->second->is_tree()) {
-            return tl::nullopt;
-        }
-        return iterator->second->as_tree().entries();
-    } else if constexpr (std::same_as<T, IdentifierList>) {
-        if (not iterator->second->is_identifier_list()) {
-            return tl::nullopt;
-        }
-        return iterator->second->as_identifier_list().values();
-    } else if constexpr (std::same_as<T, Reference>) {
-        if (not iterator->second->is_reference()) {
-            return tl::nullopt;
-        }
-        return iterator->second->as_reference();
-    } else {
-        throw;
-    }
-}

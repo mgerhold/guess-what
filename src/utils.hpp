@@ -34,7 +34,7 @@ struct Overloaded : Ts... {
     return result;
 }
 
-[[nodiscard]] constexpr auto is_whitespace(c2k::Utf8Char const c) {
+[[nodiscard]] inline auto is_whitespace(c2k::Utf8Char const c) {
     return c == ' ' or c == '\f' or c == '\n' or c == '\r' or c == '\t' or c == '\v';
 }
 

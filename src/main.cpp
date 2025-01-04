@@ -4,6 +4,7 @@
 #include "item.hpp"
 #include "lexer.hpp"
 #include "parser.hpp"
+#include "synonyms_dict.hpp"
 #include "world.hpp"
 
 [[nodiscard]] static Command get_next_command(WordList const& ignore_list, World const& world) {
@@ -25,12 +26,13 @@
 int main() {
     using namespace c2k::Utf8Literals;
 
+    auto const synonyms_dict = SynonymsDict{};
     auto const ignore_list = read_word_list("lists/ignore.list");
 
     try {
         auto world = World{};
         while (true) {
-            world.process_command(get_next_command(ignore_list, world));
+            world.process_command(get_next_command(ignore_list, world), synonyms_dict);
         }
     } catch (std::exception const& exception) {
         std::cerr << "Error: " << exception.what() << '\n';

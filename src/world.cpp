@@ -1,6 +1,7 @@
 #include "world.hpp"
 #include <filesystem>
 #include "parser.hpp"
+#include "synonyms_dict.hpp"
 
 static constexpr auto items_directory = "items";
 static constexpr auto rooms_directory = "rooms";
@@ -130,13 +131,13 @@ World::World()
     }
 }
 
-void World::process_command(Command const& command) {
+void World::process_command(Command const& command, SynonymsDict const& synonyms) {
     if (not command.has_nouns()) {
-        if (try_handle_single_verb(command.verb)) {
+        if (try_handle_single_verb(command.verb, synonyms)) {
             return;
         }
     } else if (command.nouns.size() == 1) {
-        if (try_handle_verb_and_single_noun(command.verb, command.nouns.front().noun)) {
+        if (try_handle_verb_and_single_noun(command.verb, command.nouns.front().noun, synonyms)) {
             return;
         }
     }
@@ -145,6 +146,7 @@ void World::process_command(Command const& command) {
 
 [[nodiscard]] WordList World::known_objects() const {
     auto objects = WordList{};
+    objects.push_back(m_current_room->name());
     for (auto const& exit : m_current_room->exits()) {
         objects.push_back(m_rooms.at(exit.target_room).name());
     }
@@ -154,8 +156,8 @@ void World::process_command(Command const& command) {
     return objects;
 }
 
-[[nodiscard]] bool World::try_handle_single_verb(c2k::Utf8StringView const verb) {
-    if (verb == "inventar") {
+[[nodiscard]] bool World::try_handle_single_verb(c2k::Utf8StringView const verb, SynonymsDict const& synonyms) {
+    if (synonyms.is_synonym_of(verb, "inventory")) {
         if (m_inventory.is_empty()) {
             std::cout << "Ich habe nichts bei mir.\n";
             return true;
@@ -166,11 +168,11 @@ void World::process_command(Command const& command) {
         }
         return true;
     }
-    if (verb == "schaue") {
+    if (synonyms.is_synonym_of(verb, "look")) {
         std::cout << m_current_room->description() << '\n';
         return true;
     }
-    if (verb == "hilf" or verb == "hilfe") {
+    if (synonyms.is_synonym_of(verb, "help")) {
         std::cout << "Du schaust dich um und siehst die folgenden Dinge, mit denen du interagieren könntest:\n";
         for (auto const& object : known_objects()) {
             std::cout << object << '\n';
@@ -180,8 +182,12 @@ void World::process_command(Command const& command) {
     return false;
 }
 
-[[nodiscard]] bool World::try_handle_verb_and_single_noun(c2k::Utf8StringView const verb, c2k::Utf8StringView const noun) {
-    if (verb == "nimm" or verb == "nehme") {
+[[nodiscard]] bool World::try_handle_verb_and_single_noun(
+    c2k::Utf8StringView const verb,
+    c2k::Utf8StringView const noun,
+    SynonymsDict const& synonyms
+) {
+    if (synonyms.is_synonym_of(verb, "take")) {
         if (auto item = find_item(noun)) {
             if (not item.value()->blueprint().is_collectible()) {
                 std::cout << "Das kann ich nicht mitnehmen.\n";
@@ -194,7 +200,11 @@ void World::process_command(Command const& command) {
         }
         return false;
     }
-    if (verb == "schaue") {
+    if (synonyms.is_synonym_of(verb, "look")) {
+        if (noun == m_current_room->name().to_lowercase()) {
+            std::cout << m_current_room->description() << '\n';
+            return true;
+        }
         if (auto const item = find_item(noun)) {
             std::cout << item.value()->blueprint().description() << '\n';
             return true;
@@ -205,7 +215,7 @@ void World::process_command(Command const& command) {
         }
         return false;
     }
-    if (verb == "betritt" or verb == "betrete") {
+    if (synonyms.is_synonym_of(verb, "enter")) {
         if (auto exit = find_exit(noun)) {
             for (auto const required_item : exit.value().required_items) {
                 if (not m_inventory.contains(required_item)) {
@@ -221,7 +231,7 @@ void World::process_command(Command const& command) {
         }
         return false;
     }
-    if (verb == "öffne" or verb == "öffnen") {
+    if (synonyms.is_synonym_of(verb, "open")) {
         if (auto item = find_item(noun)) {
             if (not item.value()->blueprint().has_inventory()) {
                 std::cout << "Das kann ich nicht öffnen.\n";

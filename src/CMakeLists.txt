@@ -19,6 +19,7 @@ add_executable(main
         token.hpp
         entry.hpp
         word_list.hpp
+        synonyms_dict.hpp
 )
 
 target_link_system_libraries(main

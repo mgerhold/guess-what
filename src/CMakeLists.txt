@@ -14,6 +14,9 @@ add_executable(main
         inventory.hpp
         inventory.cpp
         utils.hpp
+        exit.hpp
+        lexer.hpp
+        token.hpp
 )
 
 target_link_system_libraries(main

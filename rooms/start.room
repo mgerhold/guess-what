@@ -8,4 +8,4 @@ contents:
             soup
     chair
 exits:
-    living_room: bowl
+    start: table,soup,chair,slartibart

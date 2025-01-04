@@ -5,8 +5,10 @@
 #include "room.hpp"
 
 class World final {
+public:
+    using ItemBlueprints = std::unordered_map<c2k::Utf8String, ItemBlueprint>;
 private:
-    std::unordered_map<c2k::Utf8String, ItemBlueprint> m_items;
+    ItemBlueprints m_item_blueprints;
     std::unordered_map<c2k::Utf8String, Room> m_rooms;
 
 public:

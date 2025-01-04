@@ -1,3 +1,5 @@
 name: "Tisch"
 description: "Ein einfacher Holztisch."
-classes: inventory
+classes: inventory,test
+b:
+    test: c,d,e

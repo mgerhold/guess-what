@@ -6,11 +6,7 @@
 #include <variant>
 #include <vector>
 #include "command.hpp"
-
-template<typename... Ts>
-struct Overloaded : Ts... {
-    using Ts::operator()...;
-};
+#include "utils.hpp"
 
 struct SyntaxError {};
 

@@ -1,8 +1,29 @@
 #pragma once
 
+#include <filesystem>
+#include <fstream>
+#include <lib2k/types.hpp>
 #include <lib2k/utf8/string.hpp>
 #include <lib2k/utf8/string_view.hpp>
-#include <lib2k/types.hpp>
+#include <sstream>
+
+template<typename... Ts>
+struct Overloaded : Ts... {
+    using Ts::operator()...;
+};
+
+[[nodiscard]] inline c2k::Utf8String read_file(std::filesystem::path const& path) {
+    auto file = std::ifstream{ path };
+    if (not file) {
+        throw std::runtime_error{ "Unable to open file: " + path.string() };
+    }
+    auto stream = std::ostringstream{};
+    stream << file.rdbuf();
+    if (not file) {
+        throw std::runtime_error{ "Failed to read file: " + path.string() };
+    }
+    return c2k::Utf8String{ std::move(stream).str() };
+}
 
 [[nodiscard]] inline c2k::Utf8String indent(c2k::Utf8StringView const view, usize const indentation) {
     auto result = c2k::Utf8String{};

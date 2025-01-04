@@ -6,7 +6,7 @@ static constexpr auto rooms_directory = "rooms";
 
 using DirectoryIterator = std::filesystem::recursive_directory_iterator;
 
-[[nodiscard]] static auto read_items() {
+[[nodiscard]] static auto read_item_blueprints() {
     auto blueprints = std::unordered_map<c2k::Utf8String, ItemBlueprint>{};
     for (auto const& directory_entry : DirectoryIterator{ items_directory }) {
         if (directory_entry.path().extension() != ".item") {
@@ -15,6 +15,7 @@ using DirectoryIterator = std::filesystem::recursive_directory_iterator;
         }
         std::cout << "Reading item file \"" << directory_entry.path().string() << "\"...\n";
         auto const tree = File{ directory_entry.path() }.tree();
+        std::cout << tree.pretty_print(0, 4) << "\n\n";
         auto item = ItemBlueprint{
             tree.fetch<String>("name"),
             tree.fetch<String>("description"),
@@ -30,7 +31,7 @@ using DirectoryIterator = std::filesystem::recursive_directory_iterator;
 }
 
 [[nodiscard]] static std::unique_ptr<Item> instantiate_item(
-    std::unordered_map<c2k::Utf8String, ItemBlueprint> const& blueprints,
+    World::ItemBlueprints const& blueprints,
     c2k::Utf8StringView const key,
     Entry const& value
 ) {
@@ -57,7 +58,38 @@ using DirectoryIterator = std::filesystem::recursive_directory_iterator;
     return std::make_unique<Item>(blueprint, std::move(inventory));
 }
 
-[[nodiscard]] static auto read_rooms(std::unordered_map<c2k::Utf8String, ItemBlueprint> const& item_blueprints) {
+[[nodiscard]] static std::vector<Exit> extract_exits(World::ItemBlueprints const& item_blueprints, Tree const& tree) {
+    auto const exits_tree = tree.try_fetch<Tree>("exits");
+    if (not exits_tree.has_value()) {
+        return {};
+    }
+    auto exits = std::vector<Exit>{};
+    for (auto const& [key, value] : exits_tree.value()) {
+        std::cout << "Exit: " << key.view() << '\n';
+        if (value->is_reference()) {
+            exits.emplace_back(key, std::vector<ItemBlueprint const*>{});
+            continue;
+        }
+        if (not value->is_identifier_list()) {
+            throw std::runtime_error{ "Room exits must be defined as either reference or identifier list (got "
+                                      + std::string{ value->type_name() } + " "
+                                      + std::string{ value->pretty_print(0, 0).view() } + ")." };
+        }
+        auto required_items = std::vector<ItemBlueprint const*>{};
+        for (auto const& identifier : value->as_identifier_list().values()) {
+            auto const find_iterator = item_blueprints.find(identifier);
+            if (find_iterator == item_blueprints.cend()) {
+                throw std::runtime_error{ "Room exit requires item blueprint \"" + std::string{ identifier.view() }
+                                          + "\" which could not be found." };
+            }
+            required_items.push_back(&find_iterator->second);
+        }
+        exits.emplace_back(key, std::move(required_items));
+    }
+    return exits;
+}
+
+[[nodiscard]] static auto read_rooms(World::ItemBlueprints const& item_blueprints) {
     auto rooms = std::unordered_map<c2k::Utf8String, Room>{};
     for (auto const& directory_entry : DirectoryIterator{ rooms_directory }) {
         if (directory_entry.path().extension() != ".room") {
@@ -69,7 +101,8 @@ using DirectoryIterator = std::filesystem::recursive_directory_iterator;
         auto room = Room{ tree.fetch<String>("name"),
                           tree.fetch<String>("description"),
                           tree.fetch<String>("on_entry"),
-                          tree.fetch<String>("on_exit") };
+                          tree.fetch<String>("on_exit"),
+                          extract_exits(item_blueprints, tree) };
         auto [inserted, _] = rooms.emplace(directory_entry.path().stem().string(), std::move(room));
 
         // If the room has any contents, insert all items into the room's inventory.
@@ -94,4 +127,4 @@ using DirectoryIterator = std::filesystem::recursive_directory_iterator;
 }
 
 World::World()
-    : m_items{ read_items() }, m_rooms{ read_rooms(m_items) } {}
+    : m_item_blueprints{ read_item_blueprints() }, m_rooms{ read_rooms(m_item_blueprints) } {}

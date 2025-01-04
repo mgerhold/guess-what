@@ -2,14 +2,23 @@
 #include <string>
 #include "file_parser.hpp"
 #include "item.hpp"
+#include "lexer.hpp"
 #include "parser.hpp"
 #include "world.hpp"
 
 int main() {
     using namespace c2k::Utf8Literals;
 
+
     try {
-        auto const world = World{};
+        auto file = read_file("items/soup.item");
+        auto tokens = Lexer{ file }.tokenize();
+        for (auto const& token : tokens) {
+            std::cout << token << '\n';
+        }
+        // auto file = File{ "test.item" };
+        // std::cout << file.tree().pretty_print(0, 4) << "\n\n";
+        //auto const world = World{};
     } catch (std::exception const& exception) {
         std::cerr << "Error: " << exception.what() << '\n';
     }

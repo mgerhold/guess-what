@@ -1,0 +1,6 @@
+name: "Abstellkammer"
+description: "Nix los hier."
+on_entry: "Du betrittst die Abstellkammer."
+on_exit: "Du verlässt die Abstellkammer."
+exits:
+    start

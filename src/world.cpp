@@ -1,6 +1,8 @@
 #include "world.hpp"
 #include <filesystem>
 
+#include "parser.hpp"
+
 static constexpr auto items_directory = "items";
 static constexpr auto rooms_directory = "rooms";
 
@@ -114,16 +116,16 @@ using DirectoryIterator = std::filesystem::recursive_directory_iterator;
         }
     }
 
-    if (not rooms.contains("start")) {
-        std::cerr << "Warning: No starting room found. Please add a file called \"start.room\".\n";
-    }
-
-    /*for (auto const& [_, room] : rooms) {
-        std::cout << room;
-    }*/
-
     return rooms;
 }
 
 World::World()
-    : m_item_blueprints{ read_item_blueprints() }, m_rooms{ read_rooms(m_item_blueprints) } {}
+    : m_item_blueprints{ read_item_blueprints() }, m_rooms{ read_rooms(m_item_blueprints) } {
+    if (auto const start_room = m_rooms.find("start"); start_room != m_rooms.cend()) {
+        m_current_room = &start_room->second;
+    } else {
+        std::cerr << "Warning: No starting room found. Please add a file called \"start.room\".\n";
+    }
+}
+
+void World::process_command(Command const& command) {}

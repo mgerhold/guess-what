@@ -6,37 +6,33 @@
 #include "parser.hpp"
 #include "world.hpp"
 
-int main() {
-    using namespace c2k::Utf8Literals;
-
-
-    try {
-        // auto file = read_file("rooms/start.room");
-        // auto tokens = Lexer{ file }.tokenize();
-        // for (auto const& token : tokens) {
-        //     std::cout << token << '\n';
-        // }
-        // auto parser = FileParser{ tokens };
-        // auto tree = parser.parse();
-        // std::cout << tree.pretty_print(0, 4) << '\n';
-        auto const world = World{};
-    } catch (std::exception const& exception) {
-        std::cerr << "Error: " << exception.what() << '\n';
-    }
-
-    /*while (true) {
+[[nodiscard]] static Command get_next_command(WordList const& ignore_list) {
+    while (true) {
         std::cout << "> ";
         auto input = std::string{};
         if (not std::getline(std::cin, input)) {
-            std::cerr << "Fehler beim Lesen der Eingabe.\n";
-            return EXIT_FAILURE;
+            throw std::runtime_error{ "Error reading input. " };
         }
-        auto parser = Parser{ input };
-        auto const command = parser.parse({ "suppe"_utf8, "haus"_utf8 });
-        if (not command.has_value()) {
-            std::cout << command.error() << '\n';
-        } else {
-            std::cout << command.value() << '\n';
+
+        auto const command = parse_command(input, {}, ignore_list);
+        if (command.has_value()) {
+            return command.value();
         }
-    }*/
+        std::cout << command.error() << '\n';
+    }
+}
+
+int main() {
+    using namespace c2k::Utf8Literals;
+
+    auto const ignore_list = read_word_list("lists/ignore.list");
+
+    try {
+        auto world = World{};
+        while (true) {
+            world.process_command(get_next_command(ignore_list));
+        }
+    } catch (std::exception const& exception) {
+        std::cerr << "Error: " << exception.what() << '\n';
+    }
 }

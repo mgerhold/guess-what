@@ -18,6 +18,7 @@ add_executable(main
         lexer.hpp
         token.hpp
         entry.hpp
+        word_list.hpp
 )
 
 target_link_system_libraries(main

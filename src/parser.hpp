@@ -7,6 +7,7 @@
 #include <vector>
 #include "command.hpp"
 #include "utils.hpp"
+#include "word_list.hpp"
 
 struct SyntaxError {};
 
@@ -28,14 +29,4 @@ inline std::ostream& operator<<(std::ostream& ostream, ParserError const& error)
     );
 }
 
-class Parser final {
-private:
-    std::vector<c2k::Utf8String> m_tokens;
-
-public:
-    explicit Parser(c2k::Utf8StringView input);
-    [[nodiscard]] std::expected<Command, ParserError> parse(std::vector<c2k::Utf8String> const& objects) const;
-
-private:
-    [[nodiscard]] static std::vector<c2k::Utf8String> tokenize(c2k::Utf8StringView input);
-};
+[[nodiscard]] std::expected<Command, ParserError> parse_command(c2k::Utf8StringView input, WordList const& objects, WordList const& ignore_list);

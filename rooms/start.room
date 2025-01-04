@@ -9,3 +9,4 @@ contents:
     chair
 exits:
     start: table,soup,chair
+    test

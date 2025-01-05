@@ -9,7 +9,7 @@ Dialog::Dialog(std::filesystem::path const& path) {
     auto const tree = FileParser{ Lexer{ file }.tokenize() }.parse();
 
     auto start_found = false;
-    auto speaker = tree.fetch<String>("speaker");
+    m_speaker = tree.fetch<String>("speaker");
     for (auto const& [label_name, sub_tree] : tree.fetch<Tree>("labels")) {
         if (not sub_tree->is_tree()) {
             throw std::runtime_error{ "Label must be defined as tree." };
@@ -76,9 +76,7 @@ void Dialog::run(
     auto current_label = c2k::Utf8String{ "start" };
     while (true) {
         auto const& label = m_labels.at(current_label);
-        terminal.print(m_speaker.operator+(": "));
-        terminal.println(label.text);
-        terminal.println();
+        terminal.println(m_speaker.operator+(": ").operator+(label.text));
 
         auto possible_choices = std::vector<Choice const*>{};
 
@@ -101,7 +99,7 @@ void Dialog::run(
 
         auto const choice_index = read_choice(terminal, possible_choices.size());
         auto const& choice = *possible_choices.at(choice_index);
-        terminal.println("Ich: " + choice.text);
+        terminal.println("*Ich*: " + choice.text);
         for (auto const& define_identifier : choice.defines) {
             define(define_identifier);
         }

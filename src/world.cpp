@@ -413,7 +413,7 @@ World::World()
                 }
             }
             auto& target_room = find_room_by_reference(exit.value().target_room);
-            terminal.clear();
+            terminal.clear(true);
             terminal.println(m_current_room->on_exit());
             m_current_room = &target_room;
             terminal.println(m_current_room->on_entry());
@@ -471,8 +471,12 @@ World::World()
     auto find_iterator = std::find_if(inventory.begin(), inventory.end(), [&](auto& item) {
         return item->blueprint().name().to_lowercase() == c2k::Utf8String{ name }.to_lowercase();
     });
-    if (find_iterator != inventory.end() or not include_player_inventory) {
+    if (find_iterator != inventory.end()) {
         return *find_iterator;
+    }
+
+    if (not include_player_inventory) {
+        return tl::nullopt;
     }
 
     find_iterator = std::find_if(m_inventory.begin(), m_inventory.end(), [&](auto& item) {
@@ -520,7 +524,7 @@ World::World()
         [this](c2k::Utf8StringView const identifier) { return m_defines.contains(identifier); },
         [this, &terminal](c2k::Utf8StringView const room_reference) {
             auto& room = find_room_by_reference(room_reference);
-            terminal.clear();
+            terminal.clear(true);
             terminal.println(m_current_room->on_exit());
             m_current_room = &room;
             terminal.println(m_current_room->on_entry());
@@ -529,7 +533,7 @@ World::World()
             dialog_database.run_dialog(dialog_reference, terminal, define, has_item);
         },
         [this, &terminal, &text_database] {
-            terminal.clear();
+            terminal.clear(true);
             text_database.get("win").print(terminal);
             m_running = false;
         },

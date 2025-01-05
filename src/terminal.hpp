@@ -59,7 +59,7 @@ public:
 
     ~Terminal() noexcept;
 
-    void clear();
+    void clear(bool delayed = false);
     void set_position(int x, int y);
     void print_raw(c2k::Utf8StringView text);
     void print(c2k::Utf8StringView text);

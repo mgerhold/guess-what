@@ -30,7 +30,15 @@ Terminal::~Terminal() noexcept {
     s_initialized = false;
 }
 
-void Terminal::clear() {
+void Terminal::clear(bool delayed) {
+    using namespace std::chrono_literals;
+    if (delayed) {
+        for (auto i = 0; i < 3; ++i) {
+            print_raw(".");
+            std::cout << std::flush;
+            std::this_thread::sleep_for(200ms);
+        }
+    }
     std::cout << "\x1b[2J\x1b[H";
 }
 

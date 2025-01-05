@@ -49,4 +49,8 @@ int main() {
     } catch (std::exception const& exception) {
         std::cerr << "Error: " << exception.what() << '\n';
     }
+    terminal.println();
+    terminal.println();
+    terminal.println("Drücke Enter, um das Spiel zu beenden.");
+    std::ignore = terminal.read_line();
 }

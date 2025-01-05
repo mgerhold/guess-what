@@ -1,7 +1,9 @@
 name: "Flur"
-description: "Der Kontrollraum ist kalt und still. Vor mir das zentrale Pult; die Monitore an den Wänden flimmern mit Datenströmen. Über der Konsole schwebt ein flackerndes Hologramm der Stadt. Das Summen der Server liegt in der Luft, und auf dem Hauptbildschirm blinkt eine Nachricht: „Signalfehler. Ursache unbekannt.“"
-on_entry: "Du betrittst den Flur."
-on_exit: "Du verlässt den Flur."
+description: "Ich stehe im *Flur* vor dem *Kontrollraum*. Obwohl die Lage angespannt ist, herrscht hier absolute Ruhe. Von meinen Kolleginnen und Kollegen ist niemand hier: Alle sind in der Stadt unterwegs, um die Auswirkungen der *Fehlfunktionen* vor Ort zu untersuchen. Aber ich bin mir sicher, dass die Probleme vom *Herz* selbst kommen müssen."
+on_entry: "Ich betrete den *Flur*."
+on_exit: "Ich betrete den *Flur*."
 exits:
     start:
-        description: "Die Tür zum Kontrollraum – deinem Arbeitsplatz."
+        description: "Die Tür zum *Kontrollraum* – deinem Arbeitsplatz."
+    elevator:
+        description: "Der Aufzug."

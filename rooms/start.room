@@ -1,7 +1,7 @@
 name: "Kontrollraum"
-description: "Der Kontrollraum ist kalt und still. Vor mir befindet sich das zentrale *Pult*. Über das Diagnose*terminal* an der Wand flimmern Datenströme. Über der Konsole schwebt ein flackerndes Hologramm – ein *Modell* der Stadt. Das Summen der Server liegt in der Luft, und auf dem Hauptbildschirm blinkt eine Nachricht: „Signalfehler. Ursache unbekannt.“ Hinter mir steht ein Werkzeug*schrank*."
-on_entry: "Du betrittst den Kontrollraum."
-on_exit: "Du verlässt den Kontrollraum."
+description: "Der *Kontrollraum* ist kalt und still. Vor mir befindet sich das zentrale *Kontrollpult*. Über das *Diagnoseterminal* an der Wand flimmern Datenströme. Über der Konsole schwebt ein flackerndes Hologramm – ein *Modell* der Stadt. Das Summen der Server liegt in der Luft, und auf dem Hauptbildschirm blinkt eine Nachricht: „Signalfehler. Ursache unbekannt.“ Hinter mir steht ein *Werkzeugschrank*."
+on_entry: "Ich betrete den *Kontrollraum*."
+on_exit: "Ich verlasse den *Kontrollraum*."
 contents:
     central_console
     city_map
@@ -14,4 +14,8 @@ contents:
             spare_chips
 exits:
     corridor:
-        description: "Die Tür zum Flur."
+        description: "Die Tür zum *Flur*."
+        required_items: disk
+        on_locked: "Ich sollte hier nicht weggehen, bevor ich nicht mehr über die *Störungen* herausgefunden habe."
+    elevator:
+        description: "Die Tür zum *Aufzug*."

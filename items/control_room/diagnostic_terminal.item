@@ -1,3 +1,7 @@
 name: "Terminal"
-description: "Das Diagnoseterminal an der rechten Wand ist mein Zugang zu den Systemdateien. Die Protokolle laufen endlos über den Bildschirm, gespickt mit Fehlercodes und rätselhaften Botschaften. Hier kann ich tiefer in die Software des Herzens eintauchen und herausfinden, was wirklich schief läuft – wenn ich es entschlüsseln kann."
+description: "Das Diagnoseterminal an der rechten Wand ist mein Zugang zu den Systemdateien. Die Protokolle laufen endlos über den Bildschirm, gespickt mit Fehlercodes und rätselhaften Botschaften. Hier kann ich tiefer in die Software des Herzens eintauchen und herausfinden, was wirklich schief läuft – wenn ich die Protokolle entschlüsseln kann."
 classes: none
+actions:
+    look:
+        if: ANALYZER_CONNECTED
+        print: "Ich habe das *Analysegerät* mit dem *Diagnoseterminal* verbunden. Ich sollte mir die Ergebnisse der Analyse ansehen."

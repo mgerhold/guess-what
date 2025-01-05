@@ -1,7 +1,6 @@
 #pragma once
 
 #include <unordered_map>
-
 #include "command.hpp"
 #include "item.hpp"
 #include "room.hpp"
@@ -9,6 +8,9 @@
 #include "terminal.hpp"
 #include "text_database.hpp"
 #include "word_list.hpp"
+#include <unordered_set>
+
+class Context;
 
 class World final {
 public:
@@ -19,6 +21,7 @@ private:
     std::unordered_map<c2k::Utf8String, Room> m_rooms;
     Room* m_current_room = nullptr;
     Inventory m_inventory;
+    std::unordered_set<c2k::Utf8String> m_defines;
 
 public:
     World();
@@ -47,4 +50,7 @@ private:
     [[nodiscard]] Room& find_room_by_reference(c2k::Utf8StringView name);
     [[nodiscard]] tl::optional<Exit const&> find_exit(c2k::Utf8StringView name);
     [[nodiscard]] tl::optional<std::unique_ptr<Item>&> find_item(c2k::Utf8StringView name);
+    [[nodiscard]] Context build_context(Terminal& terminal);
+    void remove_item(Item* item);
+    void spawn_item(c2k::Utf8StringView reference, SpawnLocation location);
 };

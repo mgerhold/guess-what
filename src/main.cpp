@@ -19,9 +19,7 @@
         if (command.has_value()) {
             return command.value();
         }
-        terminal.set_text_color(TextColor::Red);
         terminal.println(to_string(command.error()));
-        terminal.reset_colors();
     }
 }
 

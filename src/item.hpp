@@ -4,35 +4,7 @@
 #include <vector>
 #include "file_parser.hpp"
 #include "inventory.hpp"
-
-class ItemBlueprint final {
-private:
-    c2k::Utf8String m_name;
-    c2k::Utf8String m_description;
-    std::vector<c2k::Utf8String> m_classes;
-
-public:
-    explicit ItemBlueprint(c2k::Utf8String name, c2k::Utf8String description, std::vector<c2k::Utf8String> classes)
-        : m_name{ std::move(name) }, m_description{ std::move(description) }, m_classes{ std::move(classes) } {}
-
-    [[nodiscard]] bool has_inventory() const {
-        return has_class("inventory");
-    }
-
-    [[nodiscard]] bool is_collectible() const {
-        return has_class("collectible");
-    }
-
-    [[nodiscard]] bool has_class(c2k::Utf8StringView name) const;
-
-    [[nodiscard]] c2k::Utf8String const& name() const {
-        return m_name;
-    }
-
-    [[nodiscard]] c2k::Utf8String const& description() const {
-        return m_description;
-    }
-};
+#include "item_blueprint.hpp"
 
 class Item final {
 private:
@@ -53,6 +25,29 @@ public:
 
     [[nodiscard]] Inventory const& inventory() const {
         return m_inventory;
+    }
+
+    [[nodiscard]] bool try_execute_action(
+        c2k::Utf8StringView const category,
+        std::vector<Item*> const& targets,
+        ActionContext const& context
+    ) {
+        for (auto const& [action_category, actions] : m_blueprint->actions()) {
+            if (action_category != category) {
+                continue;
+            }
+            auto actions_completed = true;
+            for (auto const& action : actions) {
+                if (not action->try_execute(*this, targets, context)) {
+                    actions_completed = false;
+                    break;
+                }
+            }
+            if (actions_completed) {
+                return true;
+            }
+        }
+        return false;
     }
 
     friend std::ostream& operator<<(std::ostream& ostream, Item const& item) {

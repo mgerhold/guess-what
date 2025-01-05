@@ -41,6 +41,8 @@ public:
 
     void insert(std::unique_ptr<Item> item);
 
+    bool remove(Item* item);
+
     [[nodiscard]] c2k::Utf8String pretty_print(usize base_indentation, usize indentation_step = 2) const;
 
     [[nodiscard]] auto begin() {

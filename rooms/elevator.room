@@ -1,0 +1,6 @@
+name: "Aufzug"
+description: "Ich stehe im *Aufzug*. In den oberen Etagen befinden sich die Büros der *Ingenieure* und *Technikerinnen*. In den unteren Etagen befindet sich die *Forschungsabteilung*, in der unter anderem die *Datenanalyse* durchgeführt wird."
+on_entry: "Ich betrete den *Aufzug*."
+on_exit: "Ich verlasse den *Aufzug*."
+contents:
+    elevator_button

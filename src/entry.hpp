@@ -76,6 +76,9 @@ public:
         return std::move(result).value();
     }
 
+    template<std::derived_from<Entry> T>
+    [[nodiscard]] auto fetch_all(c2k::Utf8StringView const key) const -> std::vector<typename T::ValueType const*>;
+
     [[nodiscard]] Tree const& as_tree() const override {
         return *this;
     }
@@ -205,4 +208,38 @@ auto Tree::try_fetch(c2k::Utf8StringView const key) const -> tl::optional<typena
     } else {
         throw;
     }
+}
+
+template<std::derived_from<Entry> T>
+auto Tree::fetch_all(c2k::Utf8StringView const key) const -> std::vector<typename T::ValueType const*> {
+    auto results = std::vector<typename T::ValueType const*>{};
+    for (auto const& [current_key, value] : m_entries) {
+        if (key != current_key) {
+            continue;
+        }
+        if constexpr (std::same_as<T, String>) {
+            if (not value->is_string()) {
+                continue;
+            }
+            return &value->as_string().value();
+        } else if constexpr (std::same_as<T, Tree>) {
+            if (not value->is_tree()) {
+                continue;
+            }
+            return &value->as_tree().entries();
+        } else if constexpr (std::same_as<T, IdentifierList>) {
+            if (not value->is_identifier_list()) {
+                continue;
+            }
+            return &value->as_identifier_list().values();
+        } else if constexpr (std::same_as<T, Reference>) {
+            if (not value->is_reference()) {
+                continue;
+            }
+            return &value->as_reference();
+        } else {
+            throw;
+        }
+    }
+    return results;
 }

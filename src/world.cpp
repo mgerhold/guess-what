@@ -1,12 +1,166 @@
 #include "world.hpp"
 #include <filesystem>
+#include <functional>
+#include "action.hpp"
 #include "parser.hpp"
 #include "synonyms_dict.hpp"
 
 static constexpr auto items_directory = "items";
 static constexpr auto rooms_directory = "rooms";
 
+class Context final : public ActionContext {
+private:
+    Terminal* m_terminal;
+    std::vector<Item*> m_available_items;
+    std::function<void(Item*)> m_remove_item;
+    std::function<void(c2k::Utf8StringView, SpawnLocation)> m_spawn_item;
+    std::function<void(c2k::Utf8StringView)> m_define;
+    std::function<void(c2k::Utf8StringView)> m_undefine;
+    std::function<bool(c2k::Utf8StringView)> m_is_defined;
+    std::function<void(c2k::Utf8StringView)> m_goto_room;
+
+public:
+    Context(
+        Terminal& terminal,
+        std::vector<Item*> available_items,
+        std::function<void(Item*)> remove_item,
+        std::function<void(c2k::Utf8StringView, SpawnLocation)> spawn_item,
+        std::function<void(c2k::Utf8StringView)> define,
+        std::function<void(c2k::Utf8StringView)> undefine,
+        std::function<bool(c2k::Utf8StringView)> is_defined,
+        std::function<void(c2k::Utf8StringView)> goto_room
+    )
+        : m_terminal{ &terminal },
+          m_available_items{ std::move(available_items) },
+          m_remove_item{ std::move(remove_item) },
+          m_spawn_item{ std::move(spawn_item) },
+          m_define{ std::move(define) },
+          m_undefine{ std::move(undefine) },
+          m_is_defined{ std::move(is_defined) },
+          m_goto_room{ std::move(goto_room) } {}
+
+    [[nodiscard]] Terminal& terminal() const override {
+        return *m_terminal;
+    }
+
+    [[nodiscard]] std::vector<Item*> const& available_items() const override {
+        return m_available_items;
+    }
+
+    void remove_item(Item* item) const override {
+        m_remove_item(item);
+    }
+
+    [[nodiscard]] Item* find_item(c2k::Utf8StringView reference) const override {
+        return *std::find_if(m_available_items.cbegin(), m_available_items.cend(), [&](auto const& item) {
+            return item->blueprint().reference() == reference;
+        });
+    }
+
+    void spawn_item(c2k::Utf8StringView const reference, SpawnLocation const location) const override {
+        m_spawn_item(reference, location);
+    }
+
+    void define(c2k::Utf8StringView const identifier) const override {
+        m_define(identifier);
+    }
+
+    void undefine(c2k::Utf8StringView const identifier) const override {
+        m_undefine(identifier);
+    }
+
+    [[nodiscard]] bool is_defined(c2k::Utf8StringView const identifier) const override {
+        return m_is_defined(identifier);
+    }
+
+    void goto_room(c2k::Utf8StringView const room_reference) const override {
+        m_goto_room(room_reference);
+    }
+};
+
 using DirectoryIterator = std::filesystem::recursive_directory_iterator;
+
+[[nodiscard]] static std::vector<std::unique_ptr<Action>> action_list(Tree const& tree) {
+    auto actions = std::vector<std::unique_ptr<Action>>{};
+    for (auto const& [action_type, arguments] : tree.entries()) {
+        if (action_type == "print") {
+            if (not arguments->is_string()) {
+                throw std::runtime_error{ "Print action must have a string argument." };
+            }
+            actions.push_back(std::make_unique<Print>(arguments->as_string().value()));
+            continue;
+        }
+        if (action_type == "with") {
+            if (not arguments->is_identifier_list()) {
+                throw std::runtime_error{ "Use action must have an identifier list as argument." };
+            }
+            actions.push_back(std::make_unique<Use>(arguments->as_identifier_list().values()));
+            continue;
+        }
+        if (action_type == "consume") {
+            if (arguments->is_reference()) {
+                actions.push_back(std::make_unique<Consume>());
+                continue;
+            }
+            if (not arguments->is_identifier_list()) {
+                throw std::runtime_error{ "Consume action must have a reference or an identifier list as argument." };
+            }
+            actions.push_back(std::make_unique<Consume>(arguments->as_identifier_list().values()));
+            continue;
+        }
+        if (action_type == "spawn") {
+            if (not arguments->is_identifier_list()) {
+                throw std::runtime_error{ "Spawn action must have an identifier list as argument." };
+            }
+            actions.push_back(std::make_unique<Spawn>(arguments->as_identifier_list().values()));
+            continue;
+        }
+        if (action_type == "take") {
+            if (not arguments->is_identifier_list()) {
+                throw std::runtime_error{ "Take action must have an identifier list as argument." };
+            }
+            actions.push_back(std::make_unique<Take>(arguments->as_identifier_list().values()));
+            continue;
+        }
+        if (action_type == "define") {
+            if (not arguments->is_identifier_list()) {
+                throw std::runtime_error{ "Define action must have an identifier list as argument." };
+            }
+            actions.push_back(std::make_unique<Define>(arguments->as_identifier_list().values()));
+            continue;
+        }
+        if (action_type == "undefine") {
+            if (not arguments->is_identifier_list()) {
+                throw std::runtime_error{ "Undefine action must have an identifier list as argument." };
+            }
+            actions.push_back(std::make_unique<Undefine>(arguments->as_identifier_list().values()));
+            continue;
+        }
+        if (action_type == "if") {
+            if (not arguments->is_identifier_list()) {
+                throw std::runtime_error{ "If action must have an identifier list as argument." };
+            }
+            actions.push_back(std::make_unique<If>(arguments->as_identifier_list().values()));
+            continue;
+        }
+        if (action_type == "if_not") {
+            if (not arguments->is_identifier_list()) {
+                throw std::runtime_error{ "IfNot action must have an identifier list as argument." };
+            }
+            actions.push_back(std::make_unique<IfNot>(arguments->as_identifier_list().values()));
+            continue;
+        }
+        if (action_type == "goto") {
+            if (not arguments->is_identifier_list() or arguments->as_identifier_list().values().size() != 1) {
+                throw std::runtime_error{ "IfNot action must have a single identifier as argument." };
+            }
+            actions.push_back(std::make_unique<Goto>(arguments->as_identifier_list().values().front()));
+            continue;
+        }
+        throw std::runtime_error{ std::string{ action_type.view() } + " is not a valid action." };
+    }
+    return actions;
+}
 
 [[nodiscard]] static auto read_item_blueprints() {
     auto blueprints = std::unordered_map<c2k::Utf8String, ItemBlueprint>{};
@@ -15,12 +169,27 @@ using DirectoryIterator = std::filesystem::recursive_directory_iterator;
             continue;
         }
         auto const tree = File{ directory_entry.path() }.tree();
+
+        auto actions = ItemBlueprint::Actions{};
+
+        if (auto const actions_tree = tree.try_fetch<Tree>("actions")) {
+            for (auto const& [key, value] : actions_tree.value()) {
+                if (not value->is_tree()) {
+                    throw std::runtime_error{ "Actions must be defined as tree." };
+                }
+                actions.emplace_back(key, action_list(value->as_tree()));
+            }
+        }
+
+        auto reference = c2k::Utf8String{ directory_entry.path().stem().string() };
         auto item = ItemBlueprint{
+            reference,
             tree.fetch<String>("name"),
             tree.fetch<String>("description"),
             tree.fetch<IdentifierList>("classes"),
+            std::move(actions),
         };
-        blueprints.emplace(directory_entry.path().stem().string(), std::move(item));
+        blueprints.emplace(std::move(reference), std::move(item));
     }
     return blueprints;
 }
@@ -136,6 +305,26 @@ void World::process_command(
         if (try_handle_verb_and_single_noun(command.verb, command.nouns.front().noun, terminal, synonyms, text_database)) {
             return;
         }
+    } else {
+        // Check if there's an item that provides a custom action for the
+        // given nouns.
+        auto const context = build_context(terminal);
+        auto const category = synonyms.reverse_lookup(command.verb);
+
+        if (auto item = find_item(command.nouns.at(0).noun)) {
+            // "item" now is the item that the player wants to interact with.
+            if (auto target = find_item(command.nouns.at(1).noun)) {
+                // "target" now is the target item that the player wants to interact with.
+                if (item.value()->try_execute_action(category, { target.value().get() }, context)) {
+                    return;
+                }
+
+                // If this didn't work, we try to swap the items.
+                if (target.value()->try_execute_action(category, { item.value().get() }, context)) {
+                    return;
+                }
+            }
+        }
     }
     terminal.println("Ich verstehe nicht, was ich tun soll.");
 }
@@ -149,6 +338,10 @@ void World::process_command(
     for (auto const& item : m_current_room->inventory()) {
         objects.push_back(item->blueprint().name());
     }
+    for (auto const& item : m_inventory) {
+        objects.push_back(item->blueprint().name());
+    }
+    std::sort(objects.begin(), objects.end(), [](auto const& a, auto const& b) { return a.view() < b.view(); });
     return objects;
 }
 
@@ -194,6 +387,16 @@ void World::process_command(
     SynonymsDict const& synonyms,
     TextDatabase const& text_database
 ) {
+    // First, we check if there's an item that provides a custom action for the
+    // given noun. If so, we execute the action and return early.
+    auto const context = build_context(terminal);
+    auto const category = synonyms.reverse_lookup(verb);
+    if (auto item = find_item(noun)) {
+        if (item.value()->try_execute_action(category, {}, context)) {
+            return true;
+        }
+    }
+
     if (synonyms.is_synonym_of(verb, "take")) {
         if (auto item = find_item(noun)) {
             if (not item.value()->blueprint().is_collectible()) {
@@ -212,14 +415,32 @@ void World::process_command(
         return false;
     }
     if (synonyms.is_synonym_of(verb, "look")) {
+        // Check if the noun is the name of the current room.
         if (noun == m_current_room->name().to_lowercase()) {
             terminal.println(m_current_room->description());
             return true;
         }
+
+        // Check if the noun is the name of an item in the current room.
         if (auto const item = find_item(noun)) {
             terminal.println(item.value()->blueprint().description());
             return true;
         }
+
+        // Check if the noun is in the player's inventory.
+        if (auto const item = std::find_if(
+                m_inventory.begin(),
+                m_inventory.end(),
+                [&](auto const& item) {
+                    return item->blueprint().name().to_lowercase() == c2k::Utf8String{ noun }.to_lowercase();
+                }
+            );
+            item != m_inventory.end()) {
+            terminal.println((*item)->blueprint().description());
+            return true;
+        }
+
+        // Check if the noun is the name of an exit.
         if (auto const exit = find_exit(noun)) {
             terminal.println(exit.value().description);
             return true;
@@ -235,6 +456,7 @@ void World::process_command(
                 }
             }
             auto& target_room = find_room_by_reference(exit.value().target_room);
+            terminal.clear();
             terminal.println(m_current_room->on_exit());
             m_current_room = &target_room;
             terminal.println(m_current_room->on_entry());
@@ -293,4 +515,55 @@ void World::process_command(
         return tl::nullopt;
     }
     return *find_iterator;
+}
+
+[[nodiscard]] Context World::build_context(Terminal& terminal) {
+    auto available_items = std::vector<Item*>{};
+    for (auto& item : m_current_room->inventory()) {
+        available_items.push_back(item.get());
+    }
+    for (auto& item : m_inventory) {
+        available_items.push_back(item.get());
+    }
+    return Context{
+        terminal,
+        std::move(available_items),
+        [this](Item* item) { remove_item(item); },
+        [this](c2k::Utf8StringView const reference, SpawnLocation const location) { spawn_item(reference, location); },
+        [this](c2k::Utf8StringView const identifier) { m_defines.insert(identifier); },
+        [this](c2k::Utf8StringView const identifier) { m_defines.erase(identifier); },
+        [this](c2k::Utf8StringView const identifier) { return m_defines.contains(identifier); },
+        [this, &terminal](c2k::Utf8StringView const room_reference) {
+            auto& room = find_room_by_reference(room_reference);
+            terminal.clear();
+            terminal.println(m_current_room->on_exit());
+            m_current_room = &room;
+            terminal.println(m_current_room->on_entry());
+        },
+    };
+}
+
+void World::remove_item(Item* item) {
+    if (m_inventory.remove(item)) {
+        return;
+    }
+    if (m_current_room->inventory().remove(item)) {
+        return;
+    }
+    throw std::runtime_error{ "Item to remove could not be found." };
+}
+
+void World::spawn_item(c2k::Utf8StringView const reference, SpawnLocation const location) {
+    auto const item_blueprint = m_item_blueprints.find(reference);
+    if (item_blueprint == m_item_blueprints.cend()) {
+        throw std::runtime_error{ "Item blueprint \"" + std::string{ reference.view() } + "\" not found." };
+    }
+    switch (location) {
+        case SpawnLocation::Inventory:
+            m_inventory.insert(item_blueprint->second.instantiate());
+            break;
+        case SpawnLocation::Room:
+            m_current_room->insert(item_blueprint->second.instantiate());
+            break;
+    }
 }

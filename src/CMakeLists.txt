@@ -6,7 +6,6 @@ add_executable(main
         room.hpp
         file_parser.hpp
         file_parser.cpp
-        item.cpp
         item.hpp
         world.cpp
         world.hpp
@@ -27,6 +26,9 @@ add_executable(main
         text_database.hpp
         windows.hpp
         windows.cpp
+        action.hpp
+        item_blueprint.hpp
+        item_blueprint.cpp
 )
 
 target_link_system_libraries(main

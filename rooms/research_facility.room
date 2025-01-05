@@ -1,0 +1,7 @@
+name: "Forschungsabteilung"
+description: "Die *Forschungsabteilung* wirkt sehr steril. Hier arbeiten die besten Wissenschaftlerinnen und Wissenschaftler des Unternehmens. Das Zentrum der Abteilung bildet dieses *Großraumbüro*. Einige Personen haben eigene Büros, die von hier aus erreichbar sind."
+on_entry: "Ich betrete die *Forschungsabteilung*."
+on_exit: "Ich verlasse die *Forschungsabteilung*."
+exits:
+    elevator:
+        description: "Der *Aufzug*."

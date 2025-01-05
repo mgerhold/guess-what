@@ -1,0 +1,3 @@
+name: "Disk"
+description: "Eine *Memory-Disk*. Auf ihr habe ich die Ergebnisse meiner Analyse gespeichert. Mit diesen Daten sollte ich weitere Erkenntnisse gewinnen können."
+classes: collectible

@@ -38,4 +38,16 @@ public:
         }
         return false;
     }
+
+    // Try to get the category of a word. If no category is found, returns the word itself.
+    [[nodiscard]] c2k::Utf8String reverse_lookup(c2k::Utf8StringView const word) const {
+        for (auto const& [category, word_list] : m_word_lists) {
+            for (auto const& list_entry : word_list) {
+                if (word == list_entry) {
+                    return category;
+                }
+            }
+        }
+        return word;
+    }
 };

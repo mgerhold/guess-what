@@ -1,0 +1,16 @@
+name: "Knopf"
+description: "Ein Knopf, der den *Aufzug* steuert."
+classes: none
+actions:
+    use:
+        if_not: ELEVATOR_DOWN
+        print: "Ich fahre mit dem *Aufzug* nach unten."
+        define: ELEVATOR_DOWN
+        undefine: ELEVATOR_UP
+        goto: research_facility
+    use:
+        if_not: ELEVATOR_UP
+        print: "Ich fahre mit dem *Aufzug* nach oben."
+        define: ELEVATOR_UP
+        undefine: ELEVATOR_DOWN
+        goto: corridor

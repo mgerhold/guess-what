@@ -1,3 +1,6 @@
-name: "Ersatzchips"
-description: "Die kleinen, rechteckigen Chips sind in antistatischer Folie verpackt, aber ihr Glanz ist längst verblasst. Viele von ihnen sind beschädigt oder veraltet, ihre Kontakte korrodiert. Sie scheinen nicht mehr brauchbar zu sein."
+name: "Chips"
+description: "Die kleinen, rechteckigen Chips sind in antistatischer Folie verpackt, aber ihr Glanz ist längst verblasst. Sie sollen für Reparaturarbeiten genutzt werden, aber viele von ihnen sind beschädigt oder veraltet, ihre Kontakte korrodiert. Sie scheinen nicht mehr brauchbar zu sein."
 classes: none
+actions:
+    take:
+        print: "Die Chips sind nicht mehr brauchbar. Ich lasse sie lieber hier."

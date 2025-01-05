@@ -1,3 +1,30 @@
 name: "Analysegerät"
 description: "Das Analysegerät kann mit dem Diagnoseterminal verbunden werden. Es kann die riesige Menge an Sensordaten verarbeiten und mir Hinweise auf mögliche Fehler geben."
 classes: collectible
+actions:
+    look:
+        if: DISK_CREATED
+        print: "Ich benötige das *Analysegerät* nicht mehr. Ich habe alle relevanten Ergebnisse auf einer Disk gespeichert."
+    look:
+        if: ANALYZER_CONNECTED
+        print: "Auf dem Bildschirm des *Analysegeräts* sind verschiedene Sensordaten zu sehen. Ich erkenne... ein *Muster*. Die Fehler in den Sensordaten scheinen nicht zufällig zu sein. Ich muss das weiter untersuchen. Vielleicht kann mir *Dr.* *Pfeiffer* helfen. Sie ist Mathematikerin und arbeitet im Bereich der Datenanalyse. Sie könnte mir helfen, die Muster zu entschlüsseln. Ich sollte sie in ihrem *Büro* aufsuchen. Ich speichere die Daten auf einer Disk und mache mich auf den Weg."
+        define: DISK_CREATED
+        take: disk
+    look:
+        if: DATA_CABLE_CONNECTED
+        print: "Du hast das *Kabel* mit dem *Analysegerät* verbunden."
+    use:
+        with: data_cable
+        print: "Du verbindest das Kabel mit dem Analysegerät."
+        consume: data_cable
+        define: DATA_CABLE_CONNECTED
+    use:
+        with: diagnostic_terminal
+        if: DATA_CABLE_CONNECTED
+        print: "Du verbindest das *Analysegerät* mit dem *Diagnoseterminal*."
+        define: ANALYZER_CONNECTED
+    use:
+        with: diagnostic_terminal
+        if_not: DATA_CABLE_CONNECTED
+        print: "Ohne ein geeignetes *Datenkabel* kann ich sie nicht miteinander verbinden."
+        define: ANALYZER_CONNECTED

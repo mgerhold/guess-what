@@ -1,0 +1,7 @@
+name: "Flur"
+description: "Der Kontrollraum ist kalt und still. Vor mir das zentrale Pult; die Monitore an den Wänden flimmern mit Datenströmen. Über der Konsole schwebt ein flackerndes Hologramm der Stadt. Das Summen der Server liegt in der Luft, und auf dem Hauptbildschirm blinkt eine Nachricht: „Signalfehler. Ursache unbekannt.“"
+on_entry: "Du betrittst den Flur."
+on_exit: "Du verlässt den Flur."
+exits:
+    start:
+        description: "Die Tür zum Kontrollraum – deinem Arbeitsplatz."

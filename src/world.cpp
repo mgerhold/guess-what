@@ -200,11 +200,11 @@ void World::process_command(
                 terminal.println("Das kann ich nicht mitnehmen.");
                 return true;
             }
-            terminal.print("<");
+            terminal.print_raw("<");
             terminal.set_text_color(TextColor::Green);
-            terminal.print(item.value()->blueprint().name());
+            terminal.print_raw(item.value()->blueprint().name());
             terminal.reset_colors();
-            terminal.println(" eingesammelt>");
+            terminal.print_raw(" eingesammelt>\n");
             m_inventory.insert(std::move(item.value()));
             m_current_room->inventory().clean_up();
             return true;

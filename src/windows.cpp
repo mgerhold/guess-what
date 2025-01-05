@@ -68,10 +68,8 @@ static void set_cmd_to_utf8() {
 
 void setup_terminal() {
     std::setlocale(LC_ALL, ".65001");
-    if (is_running_in_cmd()) {
-        enable_ansi();
-        set_cmd_to_utf8();
-    }
+    enable_ansi();
+    set_cmd_to_utf8();
 }
 
 #endif

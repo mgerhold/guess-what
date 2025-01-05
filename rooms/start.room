@@ -1,5 +1,5 @@
 name: "Kontrollraum"
-description: "Der Kontrollraum ist kalt und still. Vor mir das zentrale Pult; die Monitore an den Wänden flimmern mit Datenströmen. Über der Konsole schwebt ein flackerndes Hologramm der Stadt. Das Summen der Server liegt in der Luft, und auf dem Hauptbildschirm blinkt eine Nachricht: „Signalfehler. Ursache unbekannt.“"
+description: "Der Kontrollraum ist kalt und still. Vor mir befindet sich das zentrale *Pult*. Über das Diagnose*terminal* an der Wand flimmern Datenströme. Über der Konsole schwebt ein flackerndes Hologramm – ein *Modell* der Stadt. Das Summen der Server liegt in der Luft, und auf dem Hauptbildschirm blinkt eine Nachricht: „Signalfehler. Ursache unbekannt.“ Hinter mir steht ein Werkzeug*schrank*."
 on_entry: "Du betrittst den Kontrollraum."
 on_exit: "Du verlässt den Kontrollraum."
 contents:
@@ -13,5 +13,5 @@ contents:
             multimeter
             spare_chips
 exits:
-    start:
-        description: "todo"
+    corridor:
+        description: "Die Tür zum Flur."

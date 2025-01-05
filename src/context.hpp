@@ -1,8 +1,8 @@
 #pragma once
 
-#include "terminal.hpp"
 #include <vector>
 #include "item.hpp"
+#include "terminal.hpp"
 
 class Context final : public ActionContext {
 private:
@@ -14,6 +14,8 @@ private:
     std::function<void(c2k::Utf8StringView)> m_undefine;
     std::function<bool(c2k::Utf8StringView)> m_is_defined;
     std::function<void(c2k::Utf8StringView)> m_goto_room;
+    std::function<void(c2k::Utf8StringView)> m_start_dialog;
+    std::function<void(void)> m_win;
 
 public:
     Context(
@@ -24,7 +26,9 @@ public:
         std::function<void(c2k::Utf8StringView)> define,
         std::function<void(c2k::Utf8StringView)> undefine,
         std::function<bool(c2k::Utf8StringView)> is_defined,
-        std::function<void(c2k::Utf8StringView)> goto_room
+        std::function<void(c2k::Utf8StringView)> goto_room,
+        std::function<void(c2k::Utf8StringView)> start_dialog,
+        std::function<void(void)> win
     )
         : m_terminal{ &terminal },
           m_available_items{ std::move(available_items) },
@@ -33,7 +37,9 @@ public:
           m_define{ std::move(define) },
           m_undefine{ std::move(undefine) },
           m_is_defined{ std::move(is_defined) },
-          m_goto_room{ std::move(goto_room) } {}
+          m_goto_room{ std::move(goto_room) },
+          m_start_dialog{ std::move(start_dialog) },
+          m_win{ std::move(win) } {}
 
     [[nodiscard]] Terminal& terminal() const override {
         return *m_terminal;
@@ -71,5 +77,13 @@ public:
 
     void goto_room(c2k::Utf8StringView const room_reference) const override {
         m_goto_room(room_reference);
+    }
+
+    void start_dialog(c2k::Utf8String const& dialog_reference) const override {
+        m_start_dialog(dialog_reference);
+    }
+
+    void win() const override {
+        m_win();
     }
 };

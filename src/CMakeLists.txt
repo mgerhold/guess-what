@@ -30,6 +30,12 @@ add_executable(main
         item_blueprint.hpp
         item_blueprint.cpp
         context.hpp
+        dialog.cpp
+        dialog.hpp
+        label.hpp
+        choice.hpp
+        dialog_database.cpp
+        dialog_database.hpp
 )
 
 target_link_system_libraries(main

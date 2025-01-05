@@ -1,0 +1,10 @@
+name: "Telefon"
+description: "Ein *Telefon*."
+classes: none
+actions:
+    use:
+        if: DREAMING_HEART
+        print: "Ich rufe den Präsidenten des Landes an und gebe ihm Bescheid, dass wir das Problem gelöst haben."
+        win
+    use:
+        print: "Ich wüsste nicht, wen ich anrufen sollte."

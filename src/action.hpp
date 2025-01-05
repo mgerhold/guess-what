@@ -30,6 +30,8 @@ public:
     virtual void undefine(c2k::Utf8StringView identifier) const = 0;
     [[nodiscard]] virtual bool is_defined(c2k::Utf8StringView identifier) const = 0;
     virtual void goto_room(c2k::Utf8StringView room_reference) const = 0;
+    virtual void start_dialog(c2k::Utf8String const& dialog_reference) const = 0;
+    virtual void win() const = 0;
 };
 
 class Action {
@@ -214,6 +216,30 @@ public:
 
     [[nodiscard]] bool try_execute(Item& item, std::vector<Item*> const& targets, ActionContext const& context) override {
         context.goto_room(m_target);
+        return true;
+    }
+};
+
+class DialogAction final : public Action {
+private:
+    c2k::Utf8String m_dialog_reference;
+
+public:
+    explicit DialogAction(c2k::Utf8String dialog_reference)
+        : m_dialog_reference{ std::move(dialog_reference) } {}
+
+    [[nodiscard]] bool try_execute(Item&, std::vector<Item*> const&, ActionContext const& context) override {
+        context.start_dialog(m_dialog_reference);
+        return true;
+    }
+};
+
+class Win final : public Action {
+public:
+    Win() = default;
+
+    [[nodiscard]] bool try_execute(Item&, std::vector<Item*> const&, ActionContext const& context) override {
+        context.win();
         return true;
     }
 };

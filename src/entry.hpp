@@ -162,6 +162,8 @@ public:
 
 class Reference final : public Entry {
 public:
+    using ValueType = Reference;
+
     [[nodiscard]] bool is_reference() const override {
         return true;
     }

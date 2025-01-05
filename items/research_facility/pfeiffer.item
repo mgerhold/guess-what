@@ -1,0 +1,6 @@
+name: "Pfeiffer"
+description: "Dr. Pfeiffer ist eine der führenden Wissenschaftlerinnen in der *Forschungsabteilung*. Sie ist eine Expertin auf dem Gebiet der *Datenanalyse*."
+classes: none
+actions:
+    talk:
+        dialog: pfeiffer

@@ -1,0 +1,21 @@
+speaker: "Dr. Pfeiffer"
+labels:
+    start:
+        text: "Hey, *Alex*! Ich habe gehört, dass du hier bist, um herauszufinden, was mit dem *Herz* los ist. Aber was treibt dich in die *Forschungsabteilung*? Kann ich etwas für dich tun?"
+        choice:
+            required_items: disk
+            prompt: "Memory-Disk zeigen"
+            text: "Ich habe diese *Memory-Disk* angefertigt. Sie enthält die Ergebnisse meiner Analyse. Es scheint ein *Muster* zu geben, aber ich kann es nicht ganz durchdringen. Kannst du einen Blick darauf werfen?"
+            goto: inspect_disk
+        choice:
+            prompt: "Nein, danke"
+            text: "Nein, danke. Ich muss mich beeilen, den *Problemen* auf die Spur zu kommen. Bis bald!"
+            exit
+
+    inspect_disk:
+        text: "Natürlich, ich schaue mir das an. Lass mich eben die Daten auf meinem *Computer* analysieren... Ah, ja, ich sehe, was du meinst. Das ist interessant. Es scheint, als ob das *Herz* in einem *Zustand* ist, den ich so noch nie gesehen habe. Es ist, als ob es... *träumt*. Aber das ist unmöglich! Ein *System* kann nicht träumen. Oder doch?"
+        choice:
+            prompt: "Zustimmen"
+            text: "Ich denke auch nicht, dass ein *System* träumen kann. Ich sollte den Präsidenten anrufen."
+            define: DREAMING_HEART
+            exit

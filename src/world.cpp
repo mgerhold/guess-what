@@ -3,6 +3,7 @@
 #include <functional>
 #include "action.hpp"
 #include "context.hpp"
+#include "dialog_database.hpp"
 #include "parser.hpp"
 #include "synonyms_dict.hpp"
 
@@ -86,6 +87,20 @@ using DirectoryIterator = std::filesystem::recursive_directory_iterator;
                 throw std::runtime_error{ "IfNot action must have a single identifier as argument." };
             }
             actions.push_back(std::make_unique<Goto>(arguments->as_identifier_list().values().front()));
+            continue;
+        }
+        if (action_type == "dialog") {
+            if (not arguments->is_identifier_list() or arguments->as_identifier_list().values().size() != 1) {
+                throw std::runtime_error{ "Dialog action must have a single identifier as argument." };
+            }
+            actions.push_back(std::make_unique<DialogAction>(arguments->as_identifier_list().values().front()));
+            continue;
+        }
+        if (action_type == "win") {
+            if (not arguments->is_reference()) {
+                throw std::runtime_error{ "Win action must have a reference as argument." };
+            }
+            actions.push_back(std::make_unique<Win>());
             continue;
         }
         throw std::runtime_error{ std::string{ action_type.view() } + " is not a valid action." };
@@ -222,42 +237,51 @@ World::World()
     }
 }
 
-void World::process_command(
+[[nodiscard]] bool World::process_command(
     Command const& command,
     Terminal& terminal,
     SynonymsDict const& synonyms,
-    TextDatabase const& text_database
+    TextDatabase const& text_database,
+    DialogDatabase const& dialog_database
 ) {
     if (not command.has_nouns()) {
-        if (try_handle_single_verb(command.verb, terminal, synonyms, text_database)) {
-            return;
+        if (try_handle_single_verb(command.verb, terminal, synonyms, text_database, dialog_database)) {
+            return m_running;
         }
     } else if (command.nouns.size() == 1) {
-        if (try_handle_verb_and_single_noun(command.verb, command.nouns.front().noun, terminal, synonyms, text_database)) {
-            return;
+        if (try_handle_verb_and_single_noun(
+                command.verb,
+                command.nouns.front().noun,
+                terminal,
+                synonyms,
+                text_database,
+                dialog_database
+            )) {
+            return m_running;
         }
     } else {
         // Check if there's an item that provides a custom action for the
         // given nouns.
-        auto const context = build_context(terminal);
+        auto const context = build_context(terminal, text_database, dialog_database);
         auto const category = synonyms.reverse_lookup(command.verb);
 
-        if (auto item = find_item(command.nouns.at(0).noun)) {
+        if (auto item = find_item(command.nouns.at(0).noun, true)) {
             // "item" now is the item that the player wants to interact with.
-            if (auto target = find_item(command.nouns.at(1).noun)) {
+            if (auto target = find_item(command.nouns.at(1).noun, true)) {
                 // "target" now is the target item that the player wants to interact with.
                 if (item.value()->try_execute_action(category, { target.value().get() }, context)) {
-                    return;
+                    return m_running;
                 }
 
                 // If this didn't work, we try to swap the items.
                 if (target.value()->try_execute_action(category, { item.value().get() }, context)) {
-                    return;
+                    return m_running;
                 }
             }
         }
     }
     terminal.println("Ich verstehe nicht, was ich tun soll.");
+    return m_running;
 }
 
 [[nodiscard]] WordList World::known_objects() const {
@@ -280,7 +304,8 @@ void World::process_command(
     c2k::Utf8StringView const verb,
     Terminal& terminal,
     SynonymsDict const& synonyms,
-    TextDatabase const& text_database
+    TextDatabase const& text_database,
+    DialogDatabase const& dialog_database
 ) {
     if (synonyms.is_synonym_of(verb, "user_manual")) {
         text_database.get("user_manual").print(terminal);
@@ -316,11 +341,12 @@ void World::process_command(
     c2k::Utf8StringView const noun,
     Terminal& terminal,
     SynonymsDict const& synonyms,
-    TextDatabase const& text_database
+    TextDatabase const& text_database,
+    DialogDatabase const& dialog_database
 ) {
     // First, we check if there's an item that provides a custom action for the
     // given noun. If so, we execute the action and return early.
-    auto const context = build_context(terminal);
+    auto const context = build_context(terminal, text_database, dialog_database);
     auto const category = synonyms.reverse_lookup(verb);
     if (auto item = find_item(noun)) {
         if (item.value()->try_execute_action(category, {}, context)) {
@@ -437,18 +463,32 @@ void World::process_command(
     return tl::nullopt;
 }
 
-[[nodiscard]] tl::optional<std::unique_ptr<Item>&> World::find_item(c2k::Utf8StringView const name) {
+[[nodiscard]] tl::optional<std::unique_ptr<Item>&> World::find_item(
+    c2k::Utf8StringView const name,
+    bool include_player_inventory
+) {
     auto& inventory = m_current_room->inventory();
-    auto const find_iterator = std::find_if(inventory.begin(), inventory.end(), [&](auto& item) {
+    auto find_iterator = std::find_if(inventory.begin(), inventory.end(), [&](auto& item) {
         return item->blueprint().name().to_lowercase() == c2k::Utf8String{ name }.to_lowercase();
     });
-    if (find_iterator == inventory.end()) {
-        return tl::nullopt;
+    if (find_iterator != inventory.end() or not include_player_inventory) {
+        return *find_iterator;
     }
-    return *find_iterator;
+
+    find_iterator = std::find_if(m_inventory.begin(), m_inventory.end(), [&](auto& item) {
+        return item->blueprint().name().to_lowercase() == c2k::Utf8String{ name }.to_lowercase();
+    });
+    if (find_iterator != m_inventory.end()) {
+        return *find_iterator;
+    }
+    return tl::nullopt;
 }
 
-[[nodiscard]] Context World::build_context(Terminal& terminal) {
+[[nodiscard]] Context World::build_context(
+    Terminal& terminal,
+    TextDatabase const& text_database,
+    DialogDatabase const& dialog_database
+) {
     auto available_items = std::vector<Item*>{};
     for (auto& item : m_current_room->inventory()) {
         available_items.push_back(item.get());
@@ -456,12 +496,26 @@ void World::process_command(
     for (auto& item : m_inventory) {
         available_items.push_back(item.get());
     }
+
+    auto const define = [this](c2k::Utf8StringView const identifier) {
+        m_defines.insert(identifier);
+    };
+
+    auto const has_item = [this](c2k::Utf8StringView const reference) -> bool {
+        return std::find_if(
+                   m_inventory.cbegin(),
+                   m_inventory.cend(),
+                   [&](auto const& item) { return item->blueprint().reference() == reference; }
+               )
+               != m_inventory.cend();
+    };
+
     return Context{
         terminal,
         std::move(available_items),
         [this](Item* item) { remove_item(item); },
         [this](c2k::Utf8StringView const reference, SpawnLocation const location) { spawn_item(reference, location); },
-        [this](c2k::Utf8StringView const identifier) { m_defines.insert(identifier); },
+        define,
         [this](c2k::Utf8StringView const identifier) { m_defines.erase(identifier); },
         [this](c2k::Utf8StringView const identifier) { return m_defines.contains(identifier); },
         [this, &terminal](c2k::Utf8StringView const room_reference) {
@@ -470,6 +524,14 @@ void World::process_command(
             terminal.println(m_current_room->on_exit());
             m_current_room = &room;
             terminal.println(m_current_room->on_entry());
+        },
+        [this, &terminal, &dialog_database, define, has_item](c2k::Utf8StringView const dialog_reference) {
+            dialog_database.run_dialog(dialog_reference, terminal, define, has_item);
+        },
+        [this, &terminal, &text_database] {
+            terminal.clear();
+            text_database.get("win").print(terminal);
+            m_running = false;
         },
     };
 }

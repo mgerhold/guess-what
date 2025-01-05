@@ -1,10 +1,12 @@
 #include "terminal.hpp"
+#include <chrono>
 #include <iostream>
 #include <lib2k/types.hpp>
 #include <locale>
 #include <sstream>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <utility>
 #include <vector>
 #ifdef _WIN32
@@ -97,6 +99,7 @@ void Terminal::exit_alternate_screen_buffer() {
 }
 
 void Terminal::print_wrapped(c2k::Utf8StringView text) {
+    using namespace std::chrono_literals;
     auto x = 0;
     auto const words = text.split(" ");
     for (auto const& word : words) {
@@ -123,20 +126,21 @@ void Terminal::print_wrapped(c2k::Utf8StringView text) {
                     ++num_asterisks;
                 }
             }
-            if (num_asterisks != 2) {
-                std::cout << to_print.view();
-            } else {
-                auto highlighted = false;
-                for (auto const c : to_print) {
-                    if (c == '*' and not highlighted) {
-                        set_text_color(TextColor::BrightYellow);
-                        highlighted = true;
-                    } else if (c == '*' and highlighted) {
-                        reset_colors();
-                        highlighted = false;
-                    } else {
-                        std::cout << c;
-                    }
+
+            auto const should_be_highlighted = num_asterisks == 2;
+
+            auto highlighted = false;
+            for (auto const c : to_print) {
+                if (should_be_highlighted and c == '*' and not highlighted) {
+                    set_text_color(TextColor::BrightYellow);
+                    highlighted = true;
+                } else if (should_be_highlighted and c == '*' and highlighted) {
+                    reset_colors();
+                    highlighted = false;
+                } else {
+                    std::cout << c;
+                    std::cout << std::flush;
+                    std::this_thread::sleep_for(20ms);
                 }
             }
         }

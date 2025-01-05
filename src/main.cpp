@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include "dialog_database.hpp"
 #include "file_parser.hpp"
 #include "item.hpp"
 #include "lexer.hpp"
@@ -29,6 +30,7 @@ int main() {
     auto const synonyms_dict = SynonymsDict{};
     auto const ignore_list = read_word_list("lists/ignore.list");
     auto const text_database = TextDatabase{};
+    auto const dialog_database = DialogDatabase{};
     if (not text_database.contains("intro")) {
         throw std::runtime_error{ "Missing intro text." };
     }
@@ -40,7 +42,9 @@ int main() {
         auto world = World{};
         while (true) {
             auto const command = get_next_command(terminal, ignore_list, world);
-            world.process_command(command, terminal, synonyms_dict, text_database);
+            if (not world.process_command(command, terminal, synonyms_dict, text_database, dialog_database)) {
+                break;
+            }
         }
     } catch (std::exception const& exception) {
         std::cerr << "Error: " << exception.what() << '\n';

@@ -17,5 +17,3 @@ exits:
         description: "Die Tür zum *Flur*."
         required_items: disk
         on_locked: "Ich sollte hier nicht weggehen, bevor ich nicht mehr über die *Störungen* herausgefunden habe."
-    elevator:
-        description: "Die Tür zum *Aufzug*."

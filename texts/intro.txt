@@ -1,0 +1,7 @@
+#Das Herz der Stadt
+
+>Die Stadt funktioniert wie ein perfekter Mechanismus – gesteuert vom Herz, einer hochentwickelten KI, die Energieflüsse, Verkehrsströme und das tägliche Leben der Bewohner überwacht. Doch in letzter Zeit häufen sich Störungen. Verkehrschaos, Stromausfälle, Systemfehler. Die Technik, auf die sich alles stützt, zeigt erste Risse.
+
+>Du bist Alex, ein erfahrener Techniker. Als du in den Kontrollraum gerufen wirst, erwarten dich keine genauen Anweisungen – nur Datenfragmente, Protokolle voller Fehlercodes und ein unerwartetes Signal. Was wirst du tun?
+
+[Tippe "Anleitung", um grundlegende Informationen zum Spiel zu erfahren.]

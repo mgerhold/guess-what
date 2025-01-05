@@ -12,6 +12,13 @@ struct Overloaded : Ts... {
     using Ts::operator()...;
 };
 
+template<typename T>
+[[nodiscard]] c2k::Utf8String to_string(T const& value) {
+    auto stream = std::ostringstream{};
+    stream << value;
+    return c2k::Utf8String{ std::move(stream).str() };
+}
+
 [[nodiscard]] inline c2k::Utf8String read_file(std::filesystem::path const& path) {
     auto file = std::ifstream{ path };
     if (not file) {

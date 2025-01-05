@@ -20,6 +20,11 @@ add_executable(main
         entry.hpp
         word_list.hpp
         synonyms_dict.hpp
+        terminal.cpp
+        terminal.hpp
+        text.hpp
+        text.cpp
+        text_database.hpp
 )
 
 target_link_system_libraries(main

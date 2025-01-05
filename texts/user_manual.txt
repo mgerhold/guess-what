@@ -1,0 +1,10 @@
+#Anleitung
+
+Die folgenden Befehle gelten für das gesamte Spiel:
+  Anleitung - zeigt diese Anleitung an
+  Inventar - zeigt den Inhalt deines Inventars an
+  Hilfe - zeigt Dinge (Gegenstände, Personen, Orte) an, mit denen du interagieren kannst
+  gehe zu [Ort] - bewegt dich zu einem anderen Ort
+  schaue [Ort/Gegenstand] an - zeigt eine Beschreibung des Ortes oder Gegenstands an
+
+Abhängig vom Gegenstand, mit dem du interagierst, können verschiedene andere Befehle möglich sein, z. B. "öffne Kiste" oder "nimm Schlüssel".

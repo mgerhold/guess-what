@@ -1,8 +1,0 @@
-name: ""
-description: ""
-classes: none
-actions:
-    iss:
-        print: "Das kann ich nicht essen."
-    wirf:
-        print: "Wie soll ich das werfen?"

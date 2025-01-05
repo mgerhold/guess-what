@@ -12,10 +12,8 @@ using DirectoryIterator = std::filesystem::recursive_directory_iterator;
     auto blueprints = std::unordered_map<c2k::Utf8String, ItemBlueprint>{};
     for (auto const& directory_entry : DirectoryIterator{ items_directory }) {
         if (directory_entry.path().extension() != ".item") {
-            std::cout << "Ignoring file \"" << directory_entry.path().string() << "\" due to extension mismatch.\n";
             continue;
         }
-        std::cout << "Reading item file \"" << directory_entry.path().string() << "\"...\n";
         auto const tree = File{ directory_entry.path() }.tree();
         auto item = ItemBlueprint{
             tree.fetch<String>("name"),
@@ -23,10 +21,6 @@ using DirectoryIterator = std::filesystem::recursive_directory_iterator;
             tree.fetch<IdentifierList>("classes"),
         };
         blueprints.emplace(directory_entry.path().stem().string(), std::move(item));
-    }
-
-    if (not blueprints.contains("default")) {
-        std::cerr << "Warning: No default item found. Please add a file called \"default.item\".\n";
     }
     return blueprints;
 }
@@ -55,7 +49,6 @@ using DirectoryIterator = std::filesystem::recursive_directory_iterator;
                                   + std::string{ value.type_name() } + " "
                                   + std::string{ value.pretty_print(0, 0).view() } + " instead)." };
     }
-    std::cout << "Instantiating item \"" << key.view() << "\".\n";
     return std::make_unique<Item>(blueprint, std::move(inventory));
 }
 
@@ -97,10 +90,8 @@ using DirectoryIterator = std::filesystem::recursive_directory_iterator;
     auto rooms = std::unordered_map<c2k::Utf8String, Room>{};
     for (auto const& directory_entry : DirectoryIterator{ rooms_directory }) {
         if (directory_entry.path().extension() != ".room") {
-            std::cout << "Ignoring file \"" << directory_entry.path().string() << "\" due to extension mismatch.\n";
             continue;
         }
-        std::cout << "Reading room file \"" << directory_entry.path().string() << "\"...\n";
         auto const tree = File{ directory_entry.path() }.tree();
         auto room = Room{ tree.fetch<String>("name"),
                           tree.fetch<String>("description"),
@@ -131,17 +122,22 @@ World::World()
     }
 }
 
-void World::process_command(Command const& command, SynonymsDict const& synonyms) {
+void World::process_command(
+    Command const& command,
+    Terminal& terminal,
+    SynonymsDict const& synonyms,
+    TextDatabase const& text_database
+) {
     if (not command.has_nouns()) {
-        if (try_handle_single_verb(command.verb, synonyms)) {
+        if (try_handle_single_verb(command.verb, terminal, synonyms, text_database)) {
             return;
         }
     } else if (command.nouns.size() == 1) {
-        if (try_handle_verb_and_single_noun(command.verb, command.nouns.front().noun, synonyms)) {
+        if (try_handle_verb_and_single_noun(command.verb, command.nouns.front().noun, terminal, synonyms, text_database)) {
             return;
         }
     }
-    std::cout << "Ich verstehe nicht, was ich tun soll.\n";
+    terminal.println("Ich verstehe nicht, was ich tun soll.");
 }
 
 [[nodiscard]] WordList World::known_objects() const {
@@ -156,26 +152,35 @@ void World::process_command(Command const& command, SynonymsDict const& synonyms
     return objects;
 }
 
-[[nodiscard]] bool World::try_handle_single_verb(c2k::Utf8StringView const verb, SynonymsDict const& synonyms) {
+[[nodiscard]] bool World::try_handle_single_verb(
+    c2k::Utf8StringView const verb,
+    Terminal& terminal,
+    SynonymsDict const& synonyms,
+    TextDatabase const& text_database
+) {
+    if (synonyms.is_synonym_of(verb, "user_manual")) {
+        text_database.get("user_manual").print(terminal);
+        return true;
+    }
     if (synonyms.is_synonym_of(verb, "inventory")) {
         if (m_inventory.is_empty()) {
-            std::cout << "Ich habe nichts bei mir.\n";
+            terminal.println("Ich habe nichts bei mir.");
             return true;
         }
-        std::cout << "Ich habe folgendes bei mir:\n";
+        terminal.println("Ich habe folgendes bei mir:");
         for (auto const& item : m_inventory) {
-            std::cout << item->blueprint().name() << '\n';
+            terminal.println(item->blueprint().name());
         }
         return true;
     }
     if (synonyms.is_synonym_of(verb, "look")) {
-        std::cout << m_current_room->description() << '\n';
+        terminal.println(m_current_room->description());
         return true;
     }
     if (synonyms.is_synonym_of(verb, "help")) {
-        std::cout << "Du schaust dich um und siehst die folgenden Dinge, mit denen du interagieren könntest:\n";
+        terminal.println("Du schaust dich um und siehst die folgenden Dinge, mit denen du interagieren könntest:");
         for (auto const& object : known_objects()) {
-            std::cout << object << '\n';
+            terminal.println(object);
         }
         return true;
     }
@@ -185,15 +190,21 @@ void World::process_command(Command const& command, SynonymsDict const& synonyms
 [[nodiscard]] bool World::try_handle_verb_and_single_noun(
     c2k::Utf8StringView const verb,
     c2k::Utf8StringView const noun,
-    SynonymsDict const& synonyms
+    Terminal& terminal,
+    SynonymsDict const& synonyms,
+    TextDatabase const& text_database
 ) {
     if (synonyms.is_synonym_of(verb, "take")) {
         if (auto item = find_item(noun)) {
             if (not item.value()->blueprint().is_collectible()) {
-                std::cout << "Das kann ich nicht mitnehmen.\n";
+                terminal.println("Das kann ich nicht mitnehmen.");
                 return true;
             }
-            std::cout << "<" << item.value()->blueprint().name() << " eingesammelt>\n";
+            terminal.print("<");
+            terminal.set_text_color(TextColor::Green);
+            terminal.print(item.value()->blueprint().name());
+            terminal.reset_colors();
+            terminal.println(" eingesammelt>");
             m_inventory.insert(std::move(item.value()));
             m_current_room->inventory().clean_up();
             return true;
@@ -202,15 +213,15 @@ void World::process_command(Command const& command, SynonymsDict const& synonyms
     }
     if (synonyms.is_synonym_of(verb, "look")) {
         if (noun == m_current_room->name().to_lowercase()) {
-            std::cout << m_current_room->description() << '\n';
+            terminal.println(m_current_room->description());
             return true;
         }
         if (auto const item = find_item(noun)) {
-            std::cout << item.value()->blueprint().description() << '\n';
+            terminal.println(item.value()->blueprint().description());
             return true;
         }
         if (auto const exit = find_exit(noun)) {
-            std::cout << exit.value().description << '\n';
+            terminal.println(exit.value().description);
             return true;
         }
         return false;
@@ -219,14 +230,14 @@ void World::process_command(Command const& command, SynonymsDict const& synonyms
         if (auto exit = find_exit(noun)) {
             for (auto const required_item : exit.value().required_items) {
                 if (not m_inventory.contains(required_item)) {
-                    std::cout << exit->on_locked.value() << '\n';
+                    terminal.println(exit->on_locked.value());
                     return true;
                 }
             }
             auto& target_room = find_room_by_reference(exit.value().target_room);
-            std::cout << m_current_room->on_exit() << '\n';
+            terminal.println(m_current_room->on_exit());
             m_current_room = &target_room;
-            std::cout << m_current_room->on_entry() << '\n';
+            terminal.println(m_current_room->on_entry());
             return true;
         }
         return false;
@@ -234,17 +245,17 @@ void World::process_command(Command const& command, SynonymsDict const& synonyms
     if (synonyms.is_synonym_of(verb, "open")) {
         if (auto item = find_item(noun)) {
             if (not item.value()->blueprint().has_inventory()) {
-                std::cout << "Das kann ich nicht öffnen.\n";
+                terminal.println("Das kann ich nicht öffnen.");
                 return true;
             }
             auto& inventory = item.value()->inventory();
             if (inventory.is_empty()) {
-                std::cout << "Es ist leer.\n";
+                terminal.println("Es ist leer.");
                 return true;
             }
-            std::cout << "Du findest die folgenden Gegenstände:\n";
+            terminal.println("Du findest die folgenden Gegenstände:");
             for (auto& item_to_take : inventory) {
-                std::cout << item_to_take->blueprint().name() << '\n';
+                terminal.println(item_to_take->blueprint().name());
                 m_current_room->insert(std::move(item_to_take));
             }
             inventory.clear();

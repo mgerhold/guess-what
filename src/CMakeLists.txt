@@ -29,6 +29,7 @@ add_executable(main
         action.hpp
         item_blueprint.hpp
         item_blueprint.cpp
+        context.hpp
 )
 
 target_link_system_libraries(main

@@ -1,61 +1,24 @@
 #include "terminal.hpp"
+#include <iostream>
 #include <lib2k/types.hpp>
 #include <locale>
 #include <sstream>
+#include <string>
+#include <string_view>
 #include <utility>
+#include <vector>
 #ifdef _WIN32
-#include <windows.h>
-
-[[nodiscard]] static std::pair<int, int> get_terminal_size() {
-    auto info = CONSOLE_SCREEN_BUFFER_INFO{};
-    GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
-    return {
-        info.srWindow.Right - info.srWindow.Left + 1,
-        info.srWindow.Bottom - info.srWindow.Top + 1,
-    };
-}
+#include "windows.hpp"
 #else
-#include <sys/ioctl.h>
-#include <unistd.h>
-#include <cstdio>
-
-[[nodiscard]] static std::pair<int, int> get_terminal_size() {
-    auto info = winsize{};
-    ioctl(STDOUT_FILENO, TIOCGWINSZ, &info);
-    return {
-        info.ws_col,
-        info.ws_row,
-    };
-}
+inline void setup_terminal() {}
 #endif
-
-static void enable_ansi() {
-#ifdef _WIN32
-    auto const stdout_handle = GetStdHandle(STD_OUTPUT_HANDLE);
-    if (stdout_handle == INVALID_HANDLE_VALUE) {
-        throw std::runtime_error{ "Unable to get stdout handle." };
-    }
-    auto dwMode = DWORD{ 0 };
-    GetConsoleMode(stdout_handle, &dwMode);
-    dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-    SetConsoleMode(stdout_handle, dwMode);
-#endif
-}
 
 Terminal::Terminal() {
     auto expected = false;
     if (not s_initialized.compare_exchange_strong(expected, true)) {
         throw std::runtime_error{ "Terminal may only be initialized once." };
     }
-    std::setlocale(LC_ALL, ".65001");
-    enable_ansi();
-    std::tie(m_width, m_height) = get_terminal_size();
-
-    m_buffer.reserve(height());
-    for (auto row = 0; row < height(); ++row) {
-        m_buffer.emplace_back(width(), ' ');
-    }
-
+    setup_terminal();
     enter_alternate_screen_buffer();
 }
 
@@ -76,8 +39,12 @@ void Terminal::set_position(int const x, int const y) {
     std::cout << "\x1b[" << (y + 1) << ";" << (x + 1) << "H";
 }
 
-void Terminal::print(c2k::Utf8StringView const text) {
+void Terminal::print_raw(c2k::Utf8StringView const text) {
     std::cout << text.view();
+}
+
+void Terminal::print(c2k::Utf8StringView const text) {
+    print_wrapped(text);
 }
 
 void Terminal::println() {
@@ -85,7 +52,8 @@ void Terminal::println() {
 }
 
 void Terminal::println(c2k::Utf8StringView const text) {
-    std::cout << text.view() << '\n';
+    print(text);
+    println();
 }
 
 [[nodiscard]] c2k::Utf8String Terminal::read_line() {
@@ -116,15 +84,6 @@ void Terminal::reset_colors() {
     std::cout << "\x1b[0m";
 }
 
-void Terminal::fill_background(BackgroundColor const color) {
-    set_background_color(color);
-    for (auto row = 0; row < height(); ++row) {
-        set_position(0, row);
-        print(m_buffer[row]);
-    }
-    set_position(0, 0);
-}
-
 void Terminal::enter_alternate_screen_buffer() {
     std::cout << "\033[?1049h";
 }
@@ -134,5 +93,57 @@ void Terminal::exit_alternate_screen_buffer() {
 }
 
 [[nodiscard]] bool Terminal::is_valid_position(int const x, int const y) const {
-    return x >= 0 && x < m_width && y >= 0 && y < m_height;
+    return x >= 0 && x < width && y >= 0 && y < height;
+}
+
+void Terminal::print_wrapped(c2k::Utf8StringView text) {
+    auto x = 0;
+    auto const words = text.split(" ");
+    for (auto const& word : words) {
+        auto word_length = static_cast<int>(word.calculate_char_width());
+        auto to_print = word;
+        auto const is_headline = word_length >= 1 and word.front() == '#';
+        if (is_headline) {
+            set_text_color(TextColor::BrightWhite);
+            --word_length;
+            to_print = word.substring(word.cbegin() + 1);
+        }
+
+        auto const remaining = width - x;
+        if (word_length > remaining) {
+            x = 0;
+            std::cout << '\n';
+        }
+        if (is_headline) {
+            std::cout << to_print.view();
+        } else {
+            auto num_asterisks = usize{ 0 };
+            for (auto const c : to_print) {
+                if (c == '*') {
+                    ++num_asterisks;
+                }
+            }
+            if (num_asterisks != 2) {
+                std::cout << to_print.view();
+            } else {
+                auto highlighted = false;
+                for (auto const c : to_print) {
+                    if (c == '*' and not highlighted) {
+                        set_text_color(TextColor::BrightYellow);
+                        highlighted = true;
+                    } else if (c == '*' and highlighted) {
+                        reset_colors();
+                        highlighted = false;
+                    } else {
+                        std::cout << c;
+                    }
+                }
+            }
+        }
+        x += word_length + 1;
+        if (x < width) {
+            std::cout << ' ';
+        }
+    }
+    reset_colors();
 }

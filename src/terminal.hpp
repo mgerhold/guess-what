@@ -1,11 +1,9 @@
 #pragma once
 
 #include <atomic>
-#include <iostream>
-#include <string>
-#include <string_view>
-#include <vector>
+#include <lib2k/utf8/string.hpp>
 #include <lib2k/utf8/string_view.hpp>
+#include <lib2k/types.hpp>
 
 enum class TextColor {
     Black = 30,
@@ -46,10 +44,10 @@ enum class BackgroundColor {
 };
 
 class Terminal final {
+public:
+    static constexpr auto width = 80;
+    static constexpr auto height = 24;
     static inline std::atomic_bool s_initialized = false;
-    int m_width = 0;
-    int m_height = 0;
-    std::vector<std::string> m_buffer;
 
 public:
     Terminal();
@@ -61,16 +59,9 @@ public:
 
     ~Terminal() noexcept;
 
-    [[nodiscard]] int width() const {
-        return m_width;
-    }
-
-    [[nodiscard]] int height() const {
-        return m_height;
-    }
-
     void clear();
     void set_position(int x, int y);
+    void print_raw(c2k::Utf8StringView text);
     void print(c2k::Utf8StringView text);
     void println();
     void println(c2k::Utf8StringView text);
@@ -80,10 +71,10 @@ public:
     void set_text_color(TextColor color);
     void set_background_color(BackgroundColor color);
     void reset_colors();
-    void fill_background(BackgroundColor color);
 
 private:
     void enter_alternate_screen_buffer();
     void exit_alternate_screen_buffer();
     [[nodiscard]] bool is_valid_position(int x, int y) const;
+    void print_wrapped(c2k::Utf8StringView text);
 };

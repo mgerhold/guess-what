@@ -1,0 +1,3 @@
+name: "Schrank"
+description: "An der Rückwand des Raumes steht ein einfacher Metallschrank, in dem Werkzeuge aufbewahrt werden."
+classes: inventory

@@ -12,7 +12,7 @@
 [[nodiscard]] static Command get_next_command(Terminal& terminal, WordList const& ignore_list, World const& world) {
     while (true) {
         terminal.set_text_color(TextColor::BrightWhite);
-        terminal.print("> ");
+        terminal.print_raw("> ");
         terminal.reset_colors();
         auto const input = terminal.read_line();
         auto const command = parse_command(input, world.known_objects(), ignore_list);
@@ -42,7 +42,6 @@ int main() {
         auto world = World{};
         while (true) {
             auto const command = get_next_command(terminal, ignore_list, world);
-            terminal.clear();
             world.process_command(command, terminal, synonyms_dict, text_database);
         }
     } catch (std::exception const& exception) {

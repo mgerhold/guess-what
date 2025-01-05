@@ -1,5 +1,0 @@
-name: "Tisch"
-description: "Ein einfacher Holztisch."
-classes: inventory,test
-b:
-    test: c,d,e

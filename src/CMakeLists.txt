@@ -25,6 +25,8 @@ add_executable(main
         text.hpp
         text.cpp
         text_database.hpp
+        windows.hpp
+        windows.cpp
 )
 
 target_link_system_libraries(main

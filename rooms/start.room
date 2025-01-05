@@ -1,14 +1,17 @@
-name: "Wohnzimmer"
-description: "Ein herrlich spartanisch eingerichtetes Wohnzimmer. Es gibt nur einen Tisch, einen Stuhl, ein Fenster und eine Tür. Auf dem Tisch steht ein Teller Suppe."
-on_entry: "Du betrittst das Wohnzimmer."
-on_exit: "Du verlässt das Wohnzimmer."
+name: "Kontrollraum"
+description: "Der Kontrollraum ist kalt und still. Vor mir das zentrale Pult; die Monitore an den Wänden flimmern mit Datenströmen. Über der Konsole schwebt ein flackerndes Hologramm der Stadt. Das Summen der Server liegt in der Luft, und auf dem Hauptbildschirm blinkt eine Nachricht: „Signalfehler. Ursache unbekannt.“"
+on_entry: "Du betrittst den Kontrollraum."
+on_exit: "Du verlässt den Kontrollraum."
 contents:
-    table:
+    central_console
+    city_map
+    diagnostic_terminal
+    tool_cabinet:
         contents:
-            soup
-    chair
+            analyzer
+            data_cable
+            multimeter
+            spare_chips
 exits:
-    store:
-        description: "Die Tür zur Abstellkammer. Hier sollte ich erst hingehen, wenn ich eine Suppe habe."
-        required_items: soup
-        on_locked: "Ohne eine Suppe gehe ich dort nicht hin."
+    start:
+        description: "todo"

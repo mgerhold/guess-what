@@ -1,0 +1,3 @@
+name: "Analysegerät"
+description: "Das Analysegerät kann mit dem Diagnoseterminal verbunden werden. Es kann die riesige Menge an Sensordaten verarbeiten und mir Hinweise auf mögliche Fehler geben."
+classes: collectible

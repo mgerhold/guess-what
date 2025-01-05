@@ -348,7 +348,7 @@ World::World()
     // given noun. If so, we execute the action and return early.
     auto const context = build_context(terminal, text_database, dialog_database);
     auto const category = synonyms.reverse_lookup(verb);
-    if (auto item = find_item(noun)) {
+    if (auto item = find_item(noun, true)) {
         if (item.value()->try_execute_action(category, {}, context)) {
             return true;
         }
